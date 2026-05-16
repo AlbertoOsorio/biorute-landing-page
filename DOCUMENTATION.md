@@ -243,6 +243,47 @@ Each step has an image (`image1/2/3.png`) and 3 bullet points.
 
 ---
 
+---
+
+## Contact Form (`src/page/Contact.tsx`)
+
+Accessible at `/contacto`. Bilingual form with three fields: **Name**, **Email**, **Message**.
+
+**Behavior:**
+- Submissions are saved to the `contact_submissions` Supabase table.
+- Shows a loading state while submitting and a success message on completion.
+- If Supabase is not yet configured (missing env vars), the form still works visually — it shows the success state without saving data, so the UI is fully testable before backend setup.
+
+**Supabase table (run once in SQL Editor):**
+```sql
+create table contact_submissions (
+  id uuid default gen_random_uuid() primary key,
+  name text not null,
+  email text not null,
+  message text not null,
+  created_at timestamptz default now()
+);
+```
+
+---
+
+## Environment Variables
+
+Copy `.env.example` to `.env` and fill in the values:
+
+```bash
+cp .env.example .env
+```
+
+| Variable | Where to find it |
+|----------|-----------------|
+| `VITE_SUPABASE_URL` | Supabase → Project Settings → API → Project URL |
+| `VITE_SUPABASE_ANON_KEY` | Supabase → Project Settings → API → anon/public key |
+
+> `.env` is gitignored and will never be committed.
+
+---
+
 ## Scripts
 
 ```bash
