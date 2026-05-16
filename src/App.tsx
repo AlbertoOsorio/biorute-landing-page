@@ -4,6 +4,7 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Layout from "./components/Layout";
 import HomePage from "./page/HomePage";
 import Vision from "./page/Vision";
+import Contact from "./page/Contact";
 
 
 function App() {
@@ -18,6 +19,11 @@ function App() {
         <Route path="/equipo" element={
           <Layout>
             <Vision />
+          </Layout>
+        } />
+        <Route path="/contacto" element={
+          <Layout>
+            <Contact />
           </Layout>
         } />
       </Routes>

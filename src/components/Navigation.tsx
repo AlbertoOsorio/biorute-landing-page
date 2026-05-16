@@ -49,7 +49,7 @@ export default function Navigation() {
       >
         <div className="grid h-12 grid-cols-[1fr_auto_1fr] items-center">
           {/* LINK IZQUIERDA */}
-          <div className="flex items-center">
+          <div className="flex items-center gap-6">
             <Link
               to="/equipo"
               className="
@@ -61,6 +61,18 @@ export default function Navigation() {
               "
             >
               {language === "es" ? "Nuestro Equipo" : "Our Team"}
+            </Link>
+            <Link
+              to="/contacto"
+              className="
+                relative text-sm sm:text-base font-medium text-[#244629]
+                after:absolute after:left-0 after:-bottom-1
+                after:h-[2px] after:w-0 after:bg-[#244629]
+                after:transition-all after:duration-300
+                hover:after:w-full
+              "
+            >
+              {language === "es" ? "Contacto" : "Contact"}
             </Link>
           </div>
 
