@@ -23,8 +23,12 @@ export type SimulatorInputs = {
   worstWeek: string;
   avgPrice: string;
   extraPoints: PricePoint[];
+  /** La temporada cruza el año (p. ej. semana 45 → semana 8). */
+  crossesYear: boolean;
   losses: Record<LossCauseKey, LossInput>;
   otherLabel: string;
+  /** "Otra causa" es opcional: solo cuenta si el usuario la agrega. */
+  otherEnabled: boolean;
 };
 
 export const LOSS_KEYS: LossCauseKey[] = [
@@ -46,6 +50,7 @@ export const emptyInputs = (): SimulatorInputs => ({
   worstWeek: "",
   avgPrice: "",
   extraPoints: [],
+  crossesYear: false,
   losses: {
     spoiled: { pct: "", price: "0" },
     discounted: { pct: "", price: "" },
@@ -54,6 +59,7 @@ export const emptyInputs = (): SimulatorInputs => ({
     other: { pct: "", price: "" },
   },
   otherLabel: "",
+  otherEnabled: false,
 });
 
 export const exampleInputs = (): SimulatorInputs => ({
@@ -71,6 +77,7 @@ export const exampleInputs = (): SimulatorInputs => ({
     { id: "ex2", week: "42", price: "2.4" },
     { id: "ex3", week: "46", price: "1.9" },
   ],
+  crossesYear: false,
   losses: {
     spoiled: { pct: "6", price: "0" },
     discounted: { pct: "12", price: "1.5" },
@@ -79,6 +86,7 @@ export const exampleInputs = (): SimulatorInputs => ({
     other: { pct: "", price: "" },
   },
   otherLabel: "",
+  otherEnabled: false,
 });
 
 /**
@@ -155,7 +163,8 @@ export function computeResults(inp: SimulatorInputs): SimulatorResults {
   let lossPctTotal = 0;
   const causes: CauseResult[] = LOSS_KEYS.map((key) => {
     const li = inp.losses[key];
-    const pct = Math.max(0, Math.min(100, parseNum(li.pct) ?? 0));
+    const enabled = key !== "other" || inp.otherEnabled;
+    const pct = enabled ? Math.max(0, Math.min(100, parseNum(li.pct) ?? 0)) : 0;
     lossPctTotal += pct;
     const price = key === "spoiled" ? 0 : Math.max(0, parseNum(li.price, c) ?? 0);
     const volume = volumeKg != null ? (volumeKg * pct) / 100 : 0;

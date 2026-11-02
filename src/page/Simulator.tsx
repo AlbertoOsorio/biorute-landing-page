@@ -241,11 +241,24 @@ export default function Simulator() {
                   <Plus className="h-4 w-4" /> {t.addWeek}
                 </button>
               </div>
+
+              <label className="flex items-start gap-3 pt-4 border-t border-[#244629]/10 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={inputs.crossesYear}
+                  onChange={(e) => update({ crossesYear: e.target.checked })}
+                  className="mt-1 h-4 w-4 accent-[#244629]"
+                />
+                <span>
+                  <span className="block text-sm font-medium">{t.crossesYear}</span>
+                  <span className="block text-xs text-[#244629]/60 mt-0.5">{t.crossesYearHelp}</span>
+                </span>
+              </label>
             </Card>
 
             <Card className="lg:col-span-7">
               <h3 className="font-semibold mb-4">{t.chartPriceTitle}</h3>
-              <PriceChart r={results} currency={cur} t={t} />
+              <PriceChart r={results} currency={cur} t={t} crossesYear={inputs.crossesYear} />
               {results.seasonSpread != null && results.seasonSpread > 0 && (
                 <p className="mt-4 text-sm text-[#244629]/75">
                   {t.spread}:{" "}
@@ -263,12 +276,30 @@ export default function Simulator() {
         <Section n={3} title={t.s3} lead={t.s3Lead}>
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             <div className="lg:col-span-5 space-y-4">
-              {LOSS_KEYS.map((key) => {
+              {LOSS_KEYS.filter((key) => key !== "other" || inputs.otherEnabled).map((key) => {
                 const c = t.causes[key];
                 const li = inputs.losses[key];
                 return (
                   <Card key={key} className="!p-5">
-                    <div className="font-semibold">{c.title}</div>
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="font-semibold">{c.title}</div>
+                      {key === "other" && (
+                        <button
+                          type="button"
+                          aria-label={t.remove}
+                          onClick={() =>
+                            update({
+                              otherEnabled: false,
+                              otherLabel: "",
+                              losses: { ...inputs.losses, other: { pct: "", price: "" } },
+                            })
+                          }
+                          className="-mt-1 -mr-1 h-8 w-8 inline-flex items-center justify-center rounded-full text-[#244629]/60 hover:bg-[#244629]/10"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      )}
+                    </div>
                     <p className="text-sm text-[#244629]/65 mt-1 mb-4">{c.help}</p>
                     {key === "other" && (
                       <div className="mb-3">
@@ -300,6 +331,15 @@ export default function Simulator() {
                   </Card>
                 );
               })}
+              {!inputs.otherEnabled && (
+                <button
+                  type="button"
+                  onClick={() => update({ otherEnabled: true })}
+                  className="w-full rounded-2xl border border-dashed border-[#244629]/30 py-4 inline-flex items-center justify-center gap-2 text-sm font-medium hover:bg-[#244629]/5 transition"
+                >
+                  <Plus className="h-4 w-4" /> {t.addOther}
+                </button>
+              )}
             </div>
 
             <div className="lg:col-span-7 space-y-6 lg:sticky lg:top-20 self-start">
@@ -381,7 +421,7 @@ export default function Simulator() {
                 <Card className="lg:col-span-5">
                   <h3 className="font-semibold mb-3">{t.assumptions}</h3>
                   <ul className="space-y-2 text-sm">
-                    {LOSS_KEYS.map((k) => (
+                    {LOSS_KEYS.filter((k) => k !== "other" || inputs.otherEnabled).map((k) => (
                       <li key={k} className="flex justify-between gap-4">
                         <span className="text-[#244629]/75">
                           {k === "other" && inputs.otherLabel ? inputs.otherLabel : t.causes[k].title}

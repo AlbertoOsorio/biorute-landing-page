@@ -38,24 +38,13 @@ export function EmptyChart({ text, height = 260 }: { text: string; height?: numb
 }
 
 /**
- * Las temporadas pueden cruzar el año (p. ej. cereza: semana 45 → semana 6).
- * Ordenamos las semanas empezando después del mayor hueco del calendario.
+ * Posición en el eje X. Siempre orden de calendario (semana 1 → 52); solo si el
+ * usuario indica que su temporada cruza el año, las semanas 1–26 van después
+ * de la 52 (p. ej. cereza: semana 45 → semana 8).
  */
-function seasonOrder(points: SimulatorResults["pricePoints"]) {
-  const weeks = [...new Set(points.map((p) => p.week))].sort((a, b) => a - b);
-  if (weeks.length < 2) return points.map((p) => ({ ...p, x: p.week }));
-  let gapStart = weeks[weeks.length - 1];
-  let maxGap = weeks[0] + 52 - weeks[weeks.length - 1];
-  for (let i = 1; i < weeks.length; i++) {
-    const g = weeks[i] - weeks[i - 1];
-    if (g > maxGap) {
-      maxGap = g;
-      gapStart = weeks[i - 1];
-    }
-  }
-  const wraps = gapStart !== weeks[weeks.length - 1];
+function seasonOrder(points: SimulatorResults["pricePoints"], crossesYear: boolean) {
   return points
-    .map((p) => ({ ...p, x: wraps && p.week <= gapStart ? p.week + 52 : p.week }))
+    .map((p) => ({ ...p, x: crossesYear && p.week <= 26 ? p.week + 52 : p.week }))
     .sort((a, b) => a.x - b.x);
 }
 
@@ -63,13 +52,16 @@ export function PriceChart({
   r,
   currency,
   t,
+  crossesYear,
 }: {
   r: SimulatorResults;
   currency: Currency;
   t: SimulatorText;
+  crossesYear: boolean;
 }) {
   if (r.pricePoints.length < 2) return <EmptyChart text={t.chartPriceEmpty} height={300} />;
-  const data = seasonOrder(r.pricePoints);
+  const data = seasonOrder(r.pricePoints, crossesYear);
+  const ticks = [...new Set(data.map((d) => d.x))];
   const weekLabel = (x: number) => `${t.weekShort} ${((x - 1) % 52) + 1}`;
   const dotColor = (kind: string) =>
     kind === "best" ? COLORS.green : kind === "worst" ? COLORS.spoiled : COLORS.ink;
@@ -82,7 +74,10 @@ export function PriceChart({
           <XAxis
             dataKey="x"
             type="number"
-            domain={["dataMin - 1", "dataMax + 1"]}
+            domain={["dataMin", "dataMax"]}
+            ticks={ticks}
+            interval="preserveStartEnd"
+            padding={{ left: 24, right: 24 }}
             allowDecimals={false}
             tickFormatter={weekLabel}
             tick={axisTick}
@@ -115,7 +110,7 @@ export function PriceChart({
             />
           )}
           <Line
-            type="monotone"
+            type="linear"
             dataKey="price"
             stroke={COLORS.ink}
             strokeWidth={2.5}

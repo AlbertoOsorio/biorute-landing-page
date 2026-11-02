@@ -30,6 +30,8 @@ const es = {
   perKg: "/kg",
   addWeek: "Agregar otra semana",
   extraHint: "Opcional: suma más semanas para dibujar mejor la curva.",
+  crossesYear: "Mi temporada cruza el año (ej. noviembre a febrero)",
+  crossesYearHelp: "Las semanas 1–26 se muestran después de la semana 52.",
   remove: "Quitar",
   chartPriceTitle: "Así evolucionó tu precio",
   chartPriceEmpty: "Completa al menos dos semanas con precio para ver la curva.",
@@ -42,6 +44,7 @@ const es = {
     "Indica qué porcentaje de tu volumen terminó en cada situación y a qué precio la vendiste. Lo que no asignes se considera vendido al precio promedio.",
   pctVolume: "% del volumen",
   otherLabel: "Describe la causa",
+  addOther: "Agregar otra causa (opcional)",
   causes: {
     spoiled: {
       title: "Se echó a perder",
@@ -145,6 +148,8 @@ const en: typeof es = {
   perKg: "/kg",
   addWeek: "Add another week",
   extraHint: "Optional: add more weeks to draw a better curve.",
+  crossesYear: "My season crosses the new year (e.g. November to February)",
+  crossesYearHelp: "Weeks 1–26 are shown after week 52.",
   remove: "Remove",
   chartPriceTitle: "How your price evolved",
   chartPriceEmpty: "Fill in at least two weeks with a price to see the curve.",
@@ -157,6 +162,7 @@ const en: typeof es = {
     "Enter what share of your volume ended up in each situation and the price you got. Anything not assigned is considered sold at the average price.",
   pctVolume: "% of volume",
   otherLabel: "Describe the cause",
+  addOther: "Add another cause (optional)",
   causes: {
     spoiled: {
       title: "It spoiled",
