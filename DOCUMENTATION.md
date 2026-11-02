@@ -267,6 +267,69 @@ create table contact_submissions (
 
 ---
 
+## Simulador (`src/page/Simulator.tsx`)
+
+Accesible en `/simulador` (enlace en la barra de navegación). Herramienta bilingüe donde el productor ingresa los datos de su temporada y ve al instante gráficos, pérdidas y el **precio implícito de Ethylock** (rango).
+
+**Secciones:**
+1. Operación — fruta, moneda (USD/CLP), volumen en toneladas.
+2. Precios — mejor, peor y promedio por kg con su semana; semanas adicionales opcionales → gráfico de evolución del precio (soporta temporadas que cruzan el año).
+3. Causas de pérdida — % del volumen y precio obtenido para: se echó a perder, vendida más barata, otra aplicación, sobreoferta, otra causa. El resto se considera vendido al precio promedio.
+4. Resultado — ingreso potencial vs. real, pérdida, valor recuperable con Ethylock y precio implícito por kg.
+5. Contacto — los datos de contacto se guardan junto con la simulación.
+
+**Cálculo (`src/simulator/calc.ts`):**
+- Pérdida por causa = volumen afectado × (precio promedio − precio obtenido).
+- Valor recuperable = pérdida × % de recuperación de Ethylock para esa causa (rango conservador–optimista).
+- Precio implícito Ethylock por kg = valor recuperable por kg × participación de valor.
+
+**Supuestos editables (`src/simulator/config.ts`):** `ETHYLOCK_RECOVERY` (recuperación por causa) y `ETHYLOCK_VALUE_SHARE` (parte del valor que se considera precio razonable). Cambiarlos actualiza todo el simulador.
+
+**Captura de datos:** cada visita tiene un id; 2,5 s después de cada cambio se guarda (o actualiza) la fila de esa visita, así quedan los datos aunque no se deje contacto. Al enviar el formulario se agrega el contacto a la misma fila. Sin Supabase configurado no se guarda nada (en desarrollo se muestra en la consola del navegador).
+
+**Supabase (ejecutar una vez en el SQL Editor):**
+```sql
+create table if not exists simulator_submissions (
+  id uuid primary key,
+  inputs jsonb not null,
+  results jsonb,
+  contact jsonb,
+  language text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+-- Sin políticas: nadie puede leer ni escribir la tabla directamente desde la web.
+alter table simulator_submissions enable row level security;
+
+-- La web solo puede guardar/actualizar la fila de su propia visita (id aleatorio).
+create or replace function save_simulation(
+  p_id uuid, p_inputs jsonb, p_results jsonb, p_contact jsonb, p_language text
+) returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if pg_column_size(p_inputs) > 20000 or pg_column_size(p_contact) > 5000 then
+    raise exception 'payload too large';
+  end if;
+  insert into simulator_submissions (id, inputs, results, contact, language)
+  values (p_id, p_inputs, p_results, p_contact, p_language)
+  on conflict (id) do update set
+    inputs = excluded.inputs,
+    results = excluded.results,
+    contact = coalesce(excluded.contact, simulator_submissions.contact),
+    language = excluded.language,
+    updated_at = now();
+end;
+$$;
+
+revoke all on function save_simulation(uuid, jsonb, jsonb, jsonb, text) from public;
+grant execute on function save_simulation(uuid, jsonb, jsonb, jsonb, text) to anon;
+```
+
+Para ver los datos: Supabase → Table Editor → `simulator_submissions` (o exportar a CSV).
+
+---
+
 ## Environment Variables
 
 Copy `.env.example` to `.env` and fill in the values:
@@ -303,6 +366,7 @@ npm run typecheck  # TypeScript type check (no emit)
 | `react` | ^18.3.1 | UI library |
 | `react-dom` | ^18.3.1 | DOM renderer |
 | `react-router-dom` | ^7.12.0 | Client-side routing |
+| `recharts` | ^2.15.4 | Gráficos del simulador |
 | `lucide-react` | ^0.344.0 | Icons (chevrons, phone icon) |
 | `@supabase/supabase-js` | ^2.57.4 | Backend client (installed, not yet used in UI) |
 | `tailwindcss` | ^3.4.1 | Utility CSS |

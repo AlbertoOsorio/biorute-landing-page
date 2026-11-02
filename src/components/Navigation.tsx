@@ -47,25 +47,40 @@ export default function Navigation() {
           px-4 sm:px-8
         "
       >
-        <div className="grid h-12 grid-cols-[1fr_auto_1fr] items-center">
+        <div className="grid h-12 grid-cols-[auto_1fr_auto] sm:grid-cols-[1fr_auto_1fr] items-center gap-1.5 sm:gap-2">
           {/* LINK IZQUIERDA */}
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-2.5 sm:gap-6 whitespace-nowrap">
             <Link
               to="/equipo"
               className="
-                relative text-sm sm:text-base font-medium text-[#244629]
+                relative text-xs sm:text-base font-medium text-[#244629]
                 after:absolute after:left-0 after:-bottom-1
                 after:h-[2px] after:w-0 after:bg-[#244629]
                 after:transition-all after:duration-300
                 hover:after:w-full
               "
             >
-              {language === "es" ? "Nuestro Equipo" : "Our Team"}
+              <span className="hidden sm:inline">
+                {language === "es" ? "Nuestro Equipo" : "Our Team"}
+              </span>
+              <span className="sm:hidden">{language === "es" ? "Equipo" : "Team"}</span>
+            </Link>
+            <Link
+              to="/simulador"
+              className="
+                relative text-xs sm:text-base font-medium text-[#244629]
+                after:absolute after:left-0 after:-bottom-1
+                after:h-[2px] after:w-0 after:bg-[#244629]
+                after:transition-all after:duration-300
+                hover:after:w-full
+              "
+            >
+              {language === "es" ? "Simulador" : "Simulator"}
             </Link>
             <Link
               to="/contacto"
               className="
-                relative text-sm sm:text-base font-medium text-[#244629]
+                relative text-xs sm:text-base font-medium text-[#244629]
                 after:absolute after:left-0 after:-bottom-1
                 after:h-[2px] after:w-0 after:bg-[#244629]
                 after:transition-all after:duration-300
@@ -85,7 +100,7 @@ export default function Navigation() {
                   (logo as unknown as string)
                 }
                 alt="BioRoute Logo"
-                className="h-10 sm:h-12 w-auto select-none cursor-pointer"
+                className="h-6 sm:h-12 w-auto max-w-none shrink-0 select-none cursor-pointer"
                 draggable={false}
               />
             </Link>
@@ -108,7 +123,7 @@ export default function Navigation() {
                 onClick={() => setLanguage("es")}
                 className={`
                   rounded-full transition-all duration-200
-                  px-2.5 py-1 sm:px-3 sm:py-1
+                  px-1.5 py-1 sm:px-3 sm:py-1
                   focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1F3D2B]/30
                   ${
                     language === "es"
@@ -126,7 +141,7 @@ export default function Navigation() {
                 onClick={() => setLanguage("en")}
                 className={`
                   rounded-full transition-all duration-200
-                  px-2.5 py-1 sm:px-3 sm:py-1
+                  px-1.5 py-1 sm:px-3 sm:py-1
                   focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1F3D2B]/30
                   ${
                     language === "en"

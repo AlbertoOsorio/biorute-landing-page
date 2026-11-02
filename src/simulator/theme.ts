@@ -1,0 +1,15 @@
+export const COLORS = {
+  ink: "#244629",
+  inkSoft: "#244629B3",
+  cream: "#F9F3E7",
+  card: "#FFFDF8",
+  green: "#3E7A4D",
+  greenLight: "#A9CDB0",
+  normal: "#244629",
+  spoiled: "#B5563A",
+  discounted: "#D39B3F",
+  diverted: "#8B8F4F",
+  oversupply: "#6B7A8F",
+  other: "#7A5A44",
+  grid: "#24462922",
+};
