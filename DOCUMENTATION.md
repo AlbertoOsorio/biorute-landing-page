@@ -254,16 +254,7 @@ Accessible at `/contacto`. Bilingual form with three fields: **Name**, **Email**
 - Shows a loading state while submitting and a success message on completion.
 - If Supabase is not yet configured (missing env vars), the form still works visually — it shows the success state without saving data, so the UI is fully testable before backend setup.
 
-**Supabase table (run once in SQL Editor):**
-```sql
-create table contact_submissions (
-  id uuid default gen_random_uuid() primary key,
-  name text not null,
-  email text not null,
-  message text not null,
-  created_at timestamptz default now()
-);
-```
+**Supabase:** la tabla `contact_submissions` se crea con `supabase/setup.sql` (la web solo puede insertar; los mensajes se leen desde el panel de Supabase).
 
 ---
 
@@ -287,46 +278,22 @@ Accesible en `/simulador` (enlace en la barra de navegación). Herramienta bilin
 
 **Captura de datos:** cada visita tiene un id; 2,5 s después de cada cambio se guarda (o actualiza) la fila de esa visita, así quedan los datos aunque no se deje contacto. Al enviar el formulario se agrega el contacto a la misma fila. Sin Supabase configurado no se guarda nada (en desarrollo se muestra en la consola del navegador).
 
-**Supabase (ejecutar una vez en el SQL Editor):**
-```sql
-create table if not exists simulator_submissions (
-  id uuid primary key,
-  inputs jsonb not null,
-  results jsonb,
-  contact jsonb,
-  language text,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
-);
-
--- Sin políticas: nadie puede leer ni escribir la tabla directamente desde la web.
-alter table simulator_submissions enable row level security;
-
--- La web solo puede guardar/actualizar la fila de su propia visita (id aleatorio).
-create or replace function save_simulation(
-  p_id uuid, p_inputs jsonb, p_results jsonb, p_contact jsonb, p_language text
-) returns void
-language plpgsql security definer set search_path = public as $$
-begin
-  if pg_column_size(p_inputs) > 20000 or pg_column_size(p_contact) > 5000 then
-    raise exception 'payload too large';
-  end if;
-  insert into simulator_submissions (id, inputs, results, contact, language)
-  values (p_id, p_inputs, p_results, p_contact, p_language)
-  on conflict (id) do update set
-    inputs = excluded.inputs,
-    results = excluded.results,
-    contact = coalesce(excluded.contact, simulator_submissions.contact),
-    language = excluded.language,
-    updated_at = now();
-end;
-$$;
-
-revoke all on function save_simulation(uuid, jsonb, jsonb, jsonb, text) from public;
-grant execute on function save_simulation(uuid, jsonb, jsonb, jsonb, text) to anon;
-```
+**Supabase:** la tabla `simulator_submissions` y la función `save_simulation` se crean con `supabase/setup.sql`.
 
 Para ver los datos: Supabase → Table Editor → `simulator_submissions` (o exportar a CSV).
+
+---
+
+## Supabase (base de datos)
+
+Servicio externo (supabase.com) donde se guardan el formulario de contacto y el simulador.
+
+1. Crear un proyecto en supabase.com.
+2. SQL Editor → New query → pegar **todo** `supabase/setup.sql` → Run.
+3. Project Settings → API / Data API → copiar *Project URL* y la clave *anon / publishable* (nunca la *service_role / secret*).
+4. Vercel → Settings → Environment Variables → `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY` (Production, Preview, Development) → redeploy.
+
+Sin estas variables los formularios muestran éxito pero **no guardan nada**.
 
 ---
 
