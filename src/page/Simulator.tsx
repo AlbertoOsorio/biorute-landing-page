@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
-import { Plus, X, Sparkles, RotateCcw } from "lucide-react";
+import { Plus, X, Sparkles, RotateCcw, ArrowRight } from "lucide-react";
 import { useLanguage } from "../context/LanguageContext";
 import {
   computeResults,
@@ -12,10 +12,10 @@ import {
   LOSS_KEYS,
   SimulatorInputs,
 } from "../simulator/calc";
-import { ETHYLOCK_RECOVERY, ETHYLOCK_VALUE_SHARE, LossCauseKey } from "../simulator/config";
+import { ETHYLOCK_RECOVERY, LossCauseKey } from "../simulator/config";
 import { simulatorText } from "../simulator/i18n";
 import { newSessionId, saveSimulation, SimulatorContact } from "../simulator/storage";
-import { LossChart, PriceChart, RevenueChart, VolumeBar } from "../simulator/charts";
+import { LossChart, PriceChart, RecoveryChart, VolumeBar } from "../simulator/charts";
 import { Card, Kpi, NumberField, Section, Segmented, TextField } from "../simulator/ui";
 
 const AUTOSAVE_MS = 2500;
@@ -79,7 +79,14 @@ export default function Simulator() {
   };
 
   const showPricePill =
-    results.ready && results.ethylockPriceHigh != null && results.ethylockPriceHigh > 0;
+    results.ready && results.recoveredHigh != null && results.recoveredHigh > 0;
+
+  // Derivados para el bloque de resultado
+  const lossShareLow = results.totalLoss ? (results.recoveredLow ?? 0) / results.totalLoss : 0;
+  const lossShareHigh = results.totalLoss ? (results.recoveredHigh ?? 0) / results.totalLoss : 0;
+  const tonsLow = results.refPrice ? (results.recoveredLow ?? 0) / results.refPrice / 1000 : 0;
+  const tonsHigh = results.refPrice ? (results.recoveredHigh ?? 0) / results.refPrice / 1000 : 0;
+  const pctFmt = (n: number) => `${formatNumber(n * 100, 0, language)}%`;
 
   return (
     <div className="bg-[#F9F3E7] text-[#244629] min-h-screen">
@@ -369,7 +376,80 @@ export default function Simulator() {
             </Card>
           ) : (
             <div className="space-y-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* Protagonista: lo que Ethylock puede recuperar */}
+              <div className="rounded-3xl bg-[#244629] text-[#F9F3E7] p-6 md:p-10">
+                <div className="text-xs md:text-sm font-semibold uppercase tracking-[0.18em] text-[#F9F3E7]/70">
+                  {t.recovered}
+                </div>
+                <div className="mt-3 flex flex-wrap items-baseline gap-x-4 gap-y-1">
+                  <span className="text-4xl sm:text-5xl lg:text-6xl font-semibold tracking-tight tabular-nums">
+                    {money(results.recoveredLow)} – {money(results.recoveredHigh)}
+                  </span>
+                  <span className="text-lg md:text-xl text-[#F9F3E7]/75">{t.perSeason}</span>
+                </div>
+
+                {/* Barra: cuánto de la pérdida se recupera */}
+                <div className="mt-8">
+                  <div className="flex justify-between text-sm text-[#F9F3E7]/75 mb-2">
+                    <span>{t.lossBarCaption}</span>
+                    <span className="font-semibold text-[#F9F3E7]">{money(results.totalLoss)}</span>
+                  </div>
+                  <div className="flex h-4 w-full overflow-hidden rounded-full bg-[#C8694C]">
+                    <div className="h-full bg-[#7FC08F]" style={{ width: `${lossShareLow * 100}%` }} />
+                    <div
+                      className="h-full bg-[#D6EBD9]"
+                      style={{ width: `${(lossShareHigh - lossShareLow) * 100}%` }}
+                    />
+                  </div>
+                  <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-xs text-[#F9F3E7]/75">
+                    <span className="inline-flex items-center gap-1.5">
+                      <span className="h-2.5 w-2.5 rounded-sm bg-[#7FC08F]" /> {t.legendRecLow}
+                    </span>
+                    <span className="inline-flex items-center gap-1.5">
+                      <span className="h-2.5 w-2.5 rounded-sm bg-[#D6EBD9]" /> {t.legendRecHigh}
+                    </span>
+                    <span className="inline-flex items-center gap-1.5">
+                      <span className="h-2.5 w-2.5 rounded-sm bg-[#C8694C]" /> {t.legendKept}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="rounded-2xl bg-[#F9F3E7]/10 p-5">
+                    <div className="text-sm text-[#F9F3E7]/75">{t.shareLabel}</div>
+                    <div className="mt-1 text-2xl md:text-3xl font-semibold tabular-nums">
+                      {pctFmt(lossShareLow)} – {pctFmt(lossShareHigh)}
+                    </div>
+                  </div>
+                  <div className="rounded-2xl bg-[#F9F3E7]/10 p-5">
+                    <div className="text-sm text-[#F9F3E7]/75">{t.upliftLabel}</div>
+                    <div className="mt-1 text-2xl md:text-3xl font-semibold tabular-nums">
+                      {moneyKg((results.refPrice ?? 0) + (results.valuePerKgLow ?? 0))} –{" "}
+                      {moneyKg((results.refPrice ?? 0) + (results.valuePerKgHigh ?? 0))}
+                      <span className="text-base font-normal text-[#F9F3E7]/75">{t.perKg}</span>
+                    </div>
+                    <div className="text-sm text-[#F9F3E7]/65 mt-1">
+                      {t.today}: {moneyKg(results.refPrice)}
+                      {t.perKg}
+                    </div>
+                  </div>
+                  <div className="rounded-2xl bg-[#F9F3E7]/10 p-5">
+                    <div className="text-sm text-[#F9F3E7]/75">{t.tonsLabel}</div>
+                    <div className="mt-1 text-2xl md:text-3xl font-semibold tabular-nums">
+                      {formatNumber(tonsLow, 0, language)} – {formatNumber(tonsHigh, 0, language)} t
+                    </div>
+                  </div>
+                </div>
+
+                <a
+                  href="#contacto-simulador"
+                  className="mt-8 inline-flex items-center gap-2 rounded-full bg-[#F9F3E7] text-[#244629] px-6 py-3 text-sm font-semibold hover:bg-white transition"
+                >
+                  {t.cta} <ArrowRight className="h-4 w-4" />
+                </a>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <Kpi label={t.potential} value={money(results.potentialRevenue)} help={t.potentialHelp} />
                 <Kpi label={t.actual} value={money(results.actualRevenue)} />
                 <Kpi
@@ -378,47 +458,14 @@ export default function Simulator() {
                   value={money(results.totalLoss)}
                   help={`${formatNumber((results.lossShare ?? 0) * 100, 1, language)}% ${t.ofPotential}`}
                 />
-                <Kpi
-                  label={t.recovered}
-                  tone="gain"
-                  value={
-                    <span className="text-xl md:text-2xl">
-                      {money(results.recoveredLow)} – {money(results.recoveredHigh)}
-                    </span>
-                  }
-                  help={t.perSeason}
-                />
-              </div>
-
-              {/* Precio implícito Ethylock */}
-              <div className="rounded-2xl bg-[#244629] text-[#F9F3E7] p-6 md:p-8 grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
-                <div className="md:col-span-7">
-                  <div className="text-xs font-semibold uppercase tracking-[0.18em] text-[#F9F3E7]/70">
-                    {t.ethylockPrice}
-                  </div>
-                  <div className="mt-2 text-3xl md:text-4xl font-semibold tracking-tight">
-                    {t.between} {moneyKg(results.ethylockPriceLow)} {t.and}{" "}
-                    {moneyKg(results.ethylockPriceHigh)}
-                    <span className="text-lg font-normal text-[#F9F3E7]/80"> {t.perKgTreated}</span>
-                  </div>
-                  <p className="mt-3 text-sm text-[#F9F3E7]/80 max-w-xl">{t.ethylockPriceHelp}</p>
-                </div>
-                <div className="md:col-span-5 rounded-xl bg-[#F9F3E7]/10 p-5">
-                  <div className="text-xs font-semibold uppercase tracking-wide text-[#F9F3E7]/70">
-                    {t.valuePerKg}
-                  </div>
-                  <div className="mt-1 text-2xl font-semibold">
-                    {moneyKg(results.valuePerKgLow)} – {moneyKg(results.valuePerKgHigh)}
-                  </div>
-                </div>
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                <Card className="lg:col-span-7">
+                <Card className="lg:col-span-8">
                   <h3 className="font-semibold mb-4">{t.chartCompareTitle}</h3>
-                  <RevenueChart r={results} currency={cur} t={t} />
+                  <RecoveryChart r={results} currency={cur} t={t} />
                 </Card>
-                <Card className="lg:col-span-5">
+                <Card className="lg:col-span-4">
                   <h3 className="font-semibold mb-3">{t.assumptions}</h3>
                   <ul className="space-y-2 text-sm">
                     {LOSS_KEYS.filter((k) => k !== "other" || inputs.otherEnabled).map((k) => (
@@ -432,9 +479,6 @@ export default function Simulator() {
                       </li>
                     ))}
                   </ul>
-                  <p className="mt-4 pt-4 border-t border-[#244629]/10 text-sm text-[#244629]/70">
-                    {t.assumptionsShare} {pct(ETHYLOCK_VALUE_SHARE[0])} – {pct(ETHYLOCK_VALUE_SHARE[1])}
-                  </p>
                 </Card>
               </div>
             </div>
@@ -481,11 +525,10 @@ export default function Simulator() {
           href="#resultado"
           className="fixed bottom-4 left-1/2 -translate-x-1/2 z-30 max-w-[calc(100vw-32px)] rounded-full bg-[#244629] text-[#F9F3E7] shadow-[0_10px_30px_rgba(0,0,0,0.25)] px-5 py-3 text-sm flex items-center gap-2 whitespace-nowrap"
         >
-          <span className="text-[#F9F3E7]/70 hidden sm:inline">{t.ethylockPrice}:</span>
+          <span className="text-[#F9F3E7]/70 hidden sm:inline">{t.pill}:</span>
           <span className="sm:hidden text-[#F9F3E7]/70">Ethylock:</span>
           <strong>
-            {moneyKg(results.ethylockPriceLow)} – {moneyKg(results.ethylockPriceHigh)}
-            {t.perKg}
+            {money(results.recoveredLow)} – {money(results.recoveredHigh)}
           </strong>
         </a>
       )}

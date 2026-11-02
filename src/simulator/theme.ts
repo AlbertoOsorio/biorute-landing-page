@@ -12,4 +12,5 @@ export const COLORS = {
   oversupply: "#6B7A8F",
   other: "#7A5A44",
   grid: "#24462922",
+  neutral: "#C9C3B4",
 };
