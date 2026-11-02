@@ -12,9 +12,14 @@ import {
   LOSS_KEYS,
   SimulatorInputs,
 } from "../simulator/calc";
-import { ETHYLOCK_RECOVERY, LossCauseKey } from "../simulator/config";
+import { RECOVERY_RATES, LossCauseKey } from "../simulator/config";
 import { simulatorText } from "../simulator/i18n";
-import { newSessionId, saveSimulation, SimulatorContact } from "../simulator/storage";
+import {
+  newSessionId,
+  saveSimulation,
+  saveSimulatorContact,
+  SimulatorContact,
+} from "../simulator/storage";
 import { LossChart, PriceChart, RecoveryChart, VolumeBar } from "../simulator/charts";
 import { Card, Kpi, NumberField, Section, Segmented, TextField } from "../simulator/ui";
 
@@ -74,8 +79,12 @@ export default function Simulator() {
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setSendState("loading");
-    const ok = await saveSimulation(sessionId.current, inputs, results, language, contact);
-    setSendState(ok ? "success" : "error");
+    // La simulación (con su contacto) y el contacto en la tabla única de contactos
+    const [simOk, contactOk] = await Promise.all([
+      saveSimulation(sessionId.current, inputs, results, language, contact),
+      saveSimulatorContact(sessionId.current, inputs, results, contact),
+    ]);
+    setSendState(simOk && contactOk ? "success" : "error");
   };
 
   const showPricePill =
@@ -94,7 +103,7 @@ export default function Simulator() {
         {/* Encabezado */}
         <header className="max-w-3xl">
           <div className="text-sm font-semibold uppercase tracking-[0.18em] text-[#244629]/60">
-            {t.eyebrow} · Ethylock
+            {t.eyebrow}
           </div>
           <h1 className="mt-3 text-4xl md:text-5xl font-semibold tracking-tight leading-tight">
             {t.title}
@@ -376,7 +385,7 @@ export default function Simulator() {
             </Card>
           ) : (
             <div className="space-y-6">
-              {/* Protagonista: lo que Ethylock puede recuperar */}
+              {/* Protagonista: lo que nuestra tecnología puede recuperar */}
               <div className="rounded-3xl bg-[#244629] text-[#F9F3E7] p-6 md:p-10">
                 <div className="text-xs md:text-sm font-semibold uppercase tracking-[0.18em] text-[#F9F3E7]/70">
                   {t.recovered}
@@ -387,6 +396,7 @@ export default function Simulator() {
                   </span>
                   <span className="text-lg md:text-xl text-[#F9F3E7]/75">{t.perSeason}</span>
                 </div>
+                <p className="mt-3 max-w-3xl text-sm leading-relaxed text-[#F9F3E7]/75">{t.grossNote}</p>
 
                 {/* Barra: cuánto de la pérdida se recupera */}
                 <div className="mt-8">
@@ -474,7 +484,7 @@ export default function Simulator() {
                           {k === "other" && inputs.otherLabel ? inputs.otherLabel : t.causes[k].title}
                         </span>
                         <span className="font-semibold tabular-nums">
-                          {pct(ETHYLOCK_RECOVERY[k][0])} – {pct(ETHYLOCK_RECOVERY[k][1])}
+                          {pct(RECOVERY_RATES[k][0])} – {pct(RECOVERY_RATES[k][1])}
                         </span>
                       </li>
                     ))}
@@ -526,7 +536,7 @@ export default function Simulator() {
           className="fixed bottom-4 left-1/2 -translate-x-1/2 z-30 max-w-[calc(100vw-32px)] rounded-full bg-[#244629] text-[#F9F3E7] shadow-[0_10px_30px_rgba(0,0,0,0.25)] px-5 py-3 text-sm flex items-center gap-2 whitespace-nowrap"
         >
           <span className="text-[#F9F3E7]/70 hidden sm:inline">{t.pill}:</span>
-          <span className="sm:hidden text-[#F9F3E7]/70">Ethylock:</span>
+          <span className="sm:hidden text-[#F9F3E7]/70">{t.pillShort}:</span>
           <strong>
             {money(results.recoveredLow)} – {money(results.recoveredHigh)}
           </strong>

@@ -2,8 +2,11 @@
  * Supuestos comerciales del simulador.
  *
  * Todo lo que ingresa el productor viene del formulario; lo único que BioRoute
- * define son estos supuestos sobre el efecto de Ethylock. Ajusta los valores aquí
+ * define son estos supuestos sobre el efecto de nuestra tecnología. Ajusta los valores aquí
  * y el simulador (gráficos, rangos y textos) se actualiza solo.
+ *
+ * Los textos de la web no nombran el producto ("nuestra tecnología"), así un
+ * cambio de marca no requiere tocar el simulador.
  */
 
 export type LossCauseKey =
@@ -14,10 +17,10 @@ export type LossCauseKey =
   | "other";
 
 /**
- * Fracción de la pérdida de cada causa que Ethylock puede recuperar.
+ * Fracción de la pérdida de cada causa que nuestra tecnología puede recuperar.
  * [escenario conservador, escenario optimista], valores entre 0 y 1.
  */
-export const ETHYLOCK_RECOVERY: Record<LossCauseKey, [number, number]> = {
+export const RECOVERY_RATES: Record<LossCauseKey, [number, number]> = {
   // Fruta que se pudrió o se descartó: el efecto antimicrobiano y anti-etileno
   // es el más directo.
   spoiled: [0.4, 0.7],
@@ -32,7 +35,8 @@ export const ETHYLOCK_RECOVERY: Record<LossCauseKey, [number, number]> = {
 };
 
 /**
- * Parte del valor recuperado que se considera un precio razonable para Ethylock
- * (el productor se queda con el resto). [mínimo, máximo] entre 0 y 1.
+ * Parte del valor recuperado que se considera un precio razonable para el producto
+ * (el productor se queda con el resto). Uso interno: no se muestra en la web,
+ * solo se guarda con cada simulación para el equipo comercial. [mínimo, máximo] entre 0 y 1.
  */
-export const ETHYLOCK_VALUE_SHARE: [number, number] = [0.2, 0.35];
+export const PRICE_VALUE_SHARE: [number, number] = [0.2, 0.35];

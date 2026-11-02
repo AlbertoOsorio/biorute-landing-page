@@ -275,7 +275,7 @@ export function LossChart({
   );
 }
 
-/** Pérdida de la temporada: hoy vs. con Ethylock (lo recuperado en verde). */
+/** Pérdida de la temporada: hoy vs. con nuestra tecnología (lo recuperado en verde). */
 export function RecoveryChart({
   r,
   currency,
@@ -291,7 +291,7 @@ export function RecoveryChart({
   const high = r.recoveredHigh ?? 0;
   const data = [
     { name: t.lossToday, kept: loss, recRange: 0, recLow: 0 },
-    { name: t.lossWithEthylock, kept: loss - high, recRange: high - low, recLow: low },
+    { name: t.lossWithTech, kept: loss - high, recRange: high - low, recLow: low },
   ];
   const short = (n: number) =>
     (currency === "USD" ? "US$" : "$") +

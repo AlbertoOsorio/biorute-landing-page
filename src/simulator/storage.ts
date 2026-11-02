@@ -1,5 +1,5 @@
 import { supabase, supabaseConfigured } from "../lib/supabase";
-import type { SimulatorInputs, SimulatorResults } from "./calc";
+import { formatMoney, formatNumber, type SimulatorInputs, type SimulatorResults } from "./calc";
 
 /**
  * Guarda la simulación en Supabase mediante la función `save_simulation`
@@ -37,8 +37,8 @@ function summarize(r: SimulatorResults) {
     loss_share: r.lossShare,
     recovered_low: r.recoveredLow,
     recovered_high: r.recoveredHigh,
-    ethylock_price_low: r.ethylockPriceLow,
-    ethylock_price_high: r.ethylockPriceHigh,
+    implied_price_low: r.impliedPriceLow,
+    implied_price_high: r.impliedPriceHigh,
     causes: r.causes.map((c) => ({ key: c.key, pct: c.pct, price: c.price, loss: c.loss })),
   };
 }
@@ -76,6 +76,53 @@ export async function saveSimulation(
     console.error("[simulador] Supabase rechazó el guardado:", error.message, error);
   } else {
     console.info("[simulador] guardado OK en Supabase");
+  }
+  return !error;
+}
+
+const FRUIT_ES = { avocado: "Palta", cherry: "Cereza", other: "Otra" } as const;
+
+/**
+ * Agrega el contacto del simulador a `contact_submissions`, la misma tabla del
+ * formulario /contacto, para tener todos los interesados en un solo lugar.
+ * El mensaje incluye un resumen de la simulación y su id (columna `id` de
+ * `simulator_submissions`) para ver el detalle completo.
+ */
+export async function saveSimulatorContact(
+  simulationId: string,
+  inputs: SimulatorInputs,
+  results: SimulatorResults,
+  contact: SimulatorContact
+): Promise<boolean> {
+  const cur = inputs.currency;
+  const fruit =
+    inputs.fruit === "other" && inputs.fruitOther ? inputs.fruitOther : FRUIT_ES[inputs.fruit];
+  const lines = [
+    "[Simulador]",
+    contact.company && `Empresa: ${contact.company}`,
+    contact.phone && `Teléfono: ${contact.phone}`,
+    contact.message && `Comentario: ${contact.message}`,
+    `Fruta: ${fruit} · Volumen: ${inputs.volumeTons || "—"} t · Moneda: ${cur}`,
+    results.ready &&
+      `Ingreso perdido: ${formatMoney(results.totalLoss, cur)} (${formatNumber(
+        (results.lossShare ?? 0) * 100,
+        1
+      )}%)`,
+    results.ready &&
+      `Recuperable: ${formatMoney(results.recoveredLow, cur)} – ${formatMoney(results.recoveredHigh, cur)}`,
+    `Simulación: ${simulationId}`,
+  ].filter(Boolean);
+  const row = { name: contact.name, email: contact.email, message: lines.join("\n") };
+
+  if (!supabaseConfigured || !supabase) {
+    console.warn("[contacto] Supabase NO configurado: contacto no guardado.", row);
+    return true;
+  }
+  const { error } = await supabase.from("contact_submissions").insert([row]);
+  if (error) {
+    console.error("[contacto] Supabase rechazó el guardado:", error.message, error);
+  } else {
+    console.info("[contacto] contacto guardado OK en Supabase");
   }
   return !error;
 }

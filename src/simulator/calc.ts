@@ -1,6 +1,6 @@
 import {
-  ETHYLOCK_RECOVERY,
-  ETHYLOCK_VALUE_SHARE,
+  RECOVERY_RATES,
+  PRICE_VALUE_SHARE,
   LossCauseKey,
 } from "./config";
 
@@ -131,8 +131,8 @@ export type SimulatorResults = {
   recoveredHigh: number | null;
   valuePerKgLow: number | null;
   valuePerKgHigh: number | null;
-  ethylockPriceLow: number | null;
-  ethylockPriceHigh: number | null;
+  impliedPriceLow: number | null;
+  impliedPriceHigh: number | null;
   ready: boolean;
 };
 
@@ -170,7 +170,7 @@ export function computeResults(inp: SimulatorInputs): SimulatorResults {
     const volume = volumeKg != null ? (volumeKg * pct) / 100 : 0;
     const revenue = volume * price;
     const loss = refPrice != null ? volume * Math.max(refPrice - price, 0) : 0;
-    const [lo, hi] = ETHYLOCK_RECOVERY[key];
+    const [lo, hi] = RECOVERY_RATES[key];
     return {
       key,
       pct,
@@ -205,8 +205,8 @@ export function computeResults(inp: SimulatorInputs): SimulatorResults {
       recoveredHigh: null,
       valuePerKgLow: null,
       valuePerKgHigh: null,
-      ethylockPriceLow: null,
-      ethylockPriceHigh: null,
+      impliedPriceLow: null,
+      impliedPriceHigh: null,
       ready,
     };
   }
@@ -237,8 +237,8 @@ export function computeResults(inp: SimulatorInputs): SimulatorResults {
     recoveredHigh,
     valuePerKgLow,
     valuePerKgHigh,
-    ethylockPriceLow: valuePerKgLow * ETHYLOCK_VALUE_SHARE[0],
-    ethylockPriceHigh: valuePerKgHigh * ETHYLOCK_VALUE_SHARE[1],
+    impliedPriceLow: valuePerKgLow * PRICE_VALUE_SHARE[0],
+    impliedPriceHigh: valuePerKgHigh * PRICE_VALUE_SHARE[1],
     ready,
   };
 }

@@ -274,9 +274,11 @@ Accesible en `/simulador` (enlace en la barra de navegación). Herramienta bilin
 - Valor recuperable = pérdida × % de recuperación de Ethylock para esa causa (rango conservador–optimista).
 - Precio implícito Ethylock por kg = valor recuperable por kg × participación de valor.
 
-**Supuestos editables (`src/simulator/config.ts`):** `ETHYLOCK_RECOVERY` (recuperación por causa) y `ETHYLOCK_VALUE_SHARE` (parte del valor que se considera precio razonable). Cambiarlos actualiza todo el simulador.
+**Supuestos editables (`src/simulator/config.ts`):** `RECOVERY_RATES` (recuperación por causa) y `PRICE_VALUE_SHARE` (parte del valor que se considera precio razonable; solo uso interno, no se muestra). Cambiarlos actualiza todo el simulador.
 
-**Captura de datos:** cada visita tiene un id; 2,5 s después de cada cambio se guarda (o actualiza) la fila de esa visita, así quedan los datos aunque no se deje contacto. Al enviar el formulario se agrega el contacto a la misma fila. Sin Supabase configurado no se guarda nada (en desarrollo se muestra en la consola del navegador).
+**Marca:** los textos no nombran el producto ("nuestra tecnología" / "nuestra formulación"), para que un rebranding no requiera cambios. El valor recuperable se presenta como **ingreso bruto adicional**, sin descontar el costo del tratamiento.
+
+**Captura de datos:** cada visita tiene un id; 2,5 s después de cada cambio se guarda (o actualiza) la fila de esa visita, así quedan los datos aunque no se deje contacto. Al enviar el formulario se agrega el contacto a la misma fila **y** se crea una fila en `contact_submissions` (mensaje que empieza con `[Simulador]`, con resumen e id de la simulación), así todos los contactos quedan en una sola tabla. Sin Supabase configurado no se guarda nada (en desarrollo se muestra en la consola del navegador).
 
 **Supabase:** la tabla `simulator_submissions` y la función `save_simulation` se crean con `supabase/setup.sql`.
 
