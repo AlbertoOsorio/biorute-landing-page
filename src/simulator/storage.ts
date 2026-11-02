@@ -51,8 +51,12 @@ export async function saveSimulation(
   contact: SimulatorContact | null = null
 ): Promise<boolean> {
   if (!supabaseConfigured || !supabase) {
+    // Visible también en producción (F12 → Console) para diagnosticar.
+    console.warn(
+      "[simulador] Supabase NO configurado: faltan VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY en este deploy. Datos no guardados."
+    );
     if (import.meta.env.DEV) {
-      console.info("[simulador] Supabase no configurado; datos no guardados", {
+      console.info("[simulador] datos que se habrían guardado", {
         id,
         inputs,
         results: summarize(results),
@@ -68,6 +72,10 @@ export async function saveSimulation(
     p_contact: contact,
     p_language: language,
   });
-  if (error && import.meta.env.DEV) console.error("[simulador]", error);
+  if (error) {
+    console.error("[simulador] Supabase rechazó el guardado:", error.message, error);
+  } else {
+    console.info("[simulador] guardado OK en Supabase");
+  }
   return !error;
 }

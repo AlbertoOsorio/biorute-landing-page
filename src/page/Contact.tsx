@@ -51,6 +51,7 @@ export default function Contact() {
 
     if (!supabaseConfigured || !supabase) {
       // Supabase not yet configured — silently succeed so the UI is testable
+      console.warn("[contacto] Supabase NO configurado: mensaje no guardado.");
       setFormState("success");
       setName("");
       setEmail("");
@@ -65,6 +66,7 @@ export default function Contact() {
       .insert([{ name, email, message }]);
 
     if (error) {
+      console.error("[contacto] Supabase rechazó el guardado:", error.message, error);
       setFormState("error");
     } else {
       setFormState("success");
