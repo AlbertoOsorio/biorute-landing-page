@@ -115,11 +115,11 @@ const es = {
     spoiled:
       "Menos pudrición y deshidratación. La acción antimicrobiana y anti-etileno retrasa la descomposición, así parte de la fruta que hoy se descarta llega en condición de venta.",
     discounted:
-      "Llega más firme, con mejor color y pedúnculo más verde. Con más días de calidad, menos cajas reciben descuentos o rechazos en destino.",
+      "Llega más firme, con mejor color y pedúnculo más verde. Con unos días más de calidad, menos cajas reciben descuentos o rechazos en destino.",
     diverted:
-      "Más fruta cumple el estándar de exportación. Parte de lo que hoy se va a industria o mercado interno porque no aguantaría el viaje puede exportarse.",
+      "Algo más de fruta cumple el estándar de exportación. Una parte de lo que hoy se va a industria o mercado interno porque llegaría justa al destino puede exportarse.",
     oversupply:
-      "Más tiempo para elegir cuándo y dónde vender. Con días extra puedes esperar a que pase la semana saturada o enviar a mercados más lejanos y mejor pagados.",
+      "Un margen de tiempo para elegir cuándo vender. Algunos días extra pueden permitirte esperar a que pase el peak de oferta en vez de vender en la peor semana.",
     other: "Efecto indirecto de la mayor vida útil; por eso usamos el supuesto más conservador.",
   } as Record<LossCauseKey, string>,
   chartCompareTitle: "Ingreso que pierdes en la temporada: hoy vs. con nuestra tecnología",
@@ -259,11 +259,11 @@ const en: typeof es = {
     spoiled:
       "Less decay and dehydration. The antimicrobial and anti-ethylene action delays spoilage, so part of the fruit you discard today arrives in sellable condition.",
     discounted:
-      "Arrives firmer, with better colour and greener stems. With more days of quality, fewer boxes get discounts or rejections at destination.",
+      "Arrives firmer, with better colour and greener stems. With a few more days of quality, fewer boxes get discounts or rejections at destination.",
     diverted:
-      "More fruit meets export standards. Part of what goes to processing or the domestic market today because it wouldn't survive the trip can be exported.",
+      "Somewhat more fruit meets export standards. Part of what goes to processing or the domestic market today because it would arrive borderline can be exported.",
     oversupply:
-      "More time to choose when and where to sell. With extra days you can wait out a saturated week or ship to farther, better-paying markets.",
+      "Some leeway to choose when to sell. A few extra days can let you wait out the supply peak instead of selling in the worst week.",
     other: "An indirect effect of longer shelf life, so we use the most conservative assumption.",
   },
   chartCompareTitle: "Revenue lost in the season: today vs. with our technology",

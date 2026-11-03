@@ -20,27 +20,29 @@ export type LossCauseKey =
  * Supuesto base que explica todo el simulador: días adicionales de vida útil
  * (calidad comercial) de la fruta tratada vs. sin tratar. [mínimo, máximo].
  * Se muestra en la web en "¿De dónde sale este valor?".
- * ⚠️ VALOR PROVISORIO: reemplazar por el dato validado de los ensayos.
+ * ⚠️ VALOR PROVISORIO y deliberadamente conservador (máximo 5 días hasta tener
+ * datos de ensayos). Reemplazar por el dato validado.
  * Usa `null` para ocultar la frase de días.
  */
-export const SHELF_LIFE_EXTRA_DAYS: [number, number] | null = [5, 10];
+export const SHELF_LIFE_EXTRA_DAYS: [number, number] | null = [2, 4];
 
 /**
  * Fracción de la pérdida de cada causa que nuestra tecnología puede recuperar.
  * [escenario conservador, escenario optimista], valores entre 0 y 1.
+ * Valores provisorios y conservadores, coherentes con SHELF_LIFE_EXTRA_DAYS.
  */
 export const RECOVERY_RATES: Record<LossCauseKey, [number, number]> = {
   // Fruta que se pudrió o se descartó: el efecto antimicrobiano y anti-etileno
   // es el más directo.
-  spoiled: [0.4, 0.7],
+  spoiled: [0.2, 0.4],
   // Vendida con descuento por madurez, deshidratación o rechazo de calidad.
-  discounted: [0.3, 0.6],
+  discounted: [0.15, 0.3],
   // Desviada a industria, mercado interno u otra aplicación.
-  diverted: [0.2, 0.5],
+  diverted: [0.1, 0.25],
   // Vendida en semanas de sobreoferta por no poder esperar o llegar a otro mercado.
-  oversupply: [0.2, 0.45],
+  oversupply: [0.1, 0.2],
   // Otras causas indicadas por el productor.
-  other: [0.1, 0.3],
+  other: [0.05, 0.15],
 };
 
 /**
