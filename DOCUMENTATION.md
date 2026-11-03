@@ -274,7 +274,7 @@ Accesible en `/simulador` (enlace en la barra de navegación). Herramienta bilin
 - Valor recuperable = pérdida × % de recuperación de Ethylock para esa causa (rango conservador–optimista).
 - Precio implícito Ethylock por kg = valor recuperable por kg × participación de valor.
 
-**Supuestos editables (`src/simulator/config.ts`):** `RECOVERY_RATES` (recuperación por causa) y `PRICE_VALUE_SHARE` (parte del valor que se considera precio razonable; solo uso interno, no se muestra). Cambiarlos actualiza todo el simulador.
+**Supuestos editables (`src/simulator/config.ts`):** `SHELF_LIFE_EXTRA_DAYS` (días adicionales de vida útil, el supuesto base que se explica en "¿De dónde sale este valor?"; **valor provisorio, validar con los ensayos**, `null` lo oculta), `RECOVERY_RATES` (recuperación por causa) y `PRICE_VALUE_SHARE` (parte del valor que se considera precio razonable; solo uso interno, no se muestra). Cambiarlos actualiza todo el simulador.
 
 **Marca:** los textos no nombran el producto ("nuestra tecnología" / "nuestra formulación"), para que un rebranding no requiera cambios. El valor recuperable se presenta como **ingreso bruto adicional**, sin descontar el costo del tratamiento.
 

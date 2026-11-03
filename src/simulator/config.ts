@@ -17,6 +17,15 @@ export type LossCauseKey =
   | "other";
 
 /**
+ * Supuesto base que explica todo el simulador: días adicionales de vida útil
+ * (calidad comercial) de la fruta tratada vs. sin tratar. [mínimo, máximo].
+ * Se muestra en la web en "¿De dónde sale este valor?".
+ * ⚠️ VALOR PROVISORIO: reemplazar por el dato validado de los ensayos.
+ * Usa `null` para ocultar la frase de días.
+ */
+export const SHELF_LIFE_EXTRA_DAYS: [number, number] | null = [5, 10];
+
+/**
  * Fracción de la pérdida de cada causa que nuestra tecnología puede recuperar.
  * [escenario conservador, escenario optimista], valores entre 0 y 1.
  */

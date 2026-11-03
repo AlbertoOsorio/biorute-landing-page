@@ -12,7 +12,7 @@ import {
   LOSS_KEYS,
   SimulatorInputs,
 } from "../simulator/calc";
-import { RECOVERY_RATES, LossCauseKey } from "../simulator/config";
+import { RECOVERY_RATES, SHELF_LIFE_EXTRA_DAYS, LossCauseKey } from "../simulator/config";
 import { simulatorText } from "../simulator/i18n";
 import {
   newSessionId,
@@ -397,6 +397,12 @@ export default function Simulator() {
                   <span className="text-lg md:text-xl text-[#F9F3E7]/75">{t.perSeason}</span>
                 </div>
                 <p className="mt-3 max-w-3xl text-sm leading-relaxed text-[#F9F3E7]/75">{t.grossNote}</p>
+                <a
+                  href="#origen-valor"
+                  className="mt-2 inline-block text-sm font-semibold text-[#F9F3E7] underline underline-offset-4 decoration-[#F9F3E7]/40 hover:decoration-[#F9F3E7]"
+                >
+                  {t.whyLink} ↓
+                </a>
 
                 {/* Barra: cuánto de la pérdida se recupera */}
                 <div className="mt-8">
@@ -459,6 +465,56 @@ export default function Simulator() {
                 </a>
               </div>
 
+              {/* ¿De dónde sale este valor? */}
+              <Card className="scroll-mt-20">
+                <div id="origen-valor" className="scroll-mt-24" />
+                <h3 className="text-xl md:text-2xl font-semibold tracking-tight">{t.whyTitle}</h3>
+                <p className="mt-3 max-w-4xl leading-relaxed text-[#244629]/80">{t.whyIntro}</p>
+                {SHELF_LIFE_EXTRA_DAYS && (
+                  <p className="mt-4 inline-block rounded-xl bg-[#244629] text-[#F9F3E7] px-4 py-3 font-semibold">
+                    {t.whyDays(SHELF_LIFE_EXTRA_DAYS[0], SHELF_LIFE_EXTRA_DAYS[1])}
+                  </p>
+                )}
+                <p className="mt-4 max-w-4xl text-sm leading-relaxed text-[#244629]/75">{t.whyFormula}</p>
+
+                <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {results.causes
+                    .filter((c) => c.key !== "other" || inputs.otherEnabled)
+                    .map((c) => {
+                      const title =
+                        c.key === "other" && inputs.otherLabel ? inputs.otherLabel : t.causes[c.key].title;
+                      const [lo, hi] = RECOVERY_RATES[c.key];
+                      return (
+                        <div key={c.key} className="flex flex-col rounded-xl border border-[#244629]/12 bg-white p-4 md:p-5">
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="font-semibold">{title}</div>
+                            <div className="shrink-0 text-right">
+                              <div className="font-semibold tabular-nums text-[#3E7A4D]">
+                                {pct(lo)} – {pct(hi)}
+                              </div>
+                              <div className="text-xs text-[#244629]/60">{t.whyRate}</div>
+                            </div>
+                          </div>
+                          <p className="mt-2 mb-3 text-sm leading-relaxed text-[#244629]/75">{t.causeWhy[c.key]}</p>
+                          <div className="mt-auto pt-3 border-t border-[#244629]/10 text-sm">
+                            {c.loss > 0 ? (
+                              <>
+                                {t.whyYouLose}{" "}
+                                <strong className="text-[#B5563A]">{money(c.loss)}</strong> → {t.whyYouRecover}{" "}
+                                <strong className="text-[#3E7A4D]">
+                                  {money(c.recoveredLow)} – {money(c.recoveredHigh)}
+                                </strong>
+                              </>
+                            ) : (
+                              <span className="text-[#244629]/50">{t.whyNoLoss}</span>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                </div>
+              </Card>
+
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <Kpi label={t.potential} value={money(results.potentialRevenue)} help={t.potentialHelp} />
                 <Kpi label={t.actual} value={money(results.actualRevenue)} />
@@ -470,27 +526,10 @@ export default function Simulator() {
                 />
               </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                <Card className="lg:col-span-8">
-                  <h3 className="font-semibold mb-4">{t.chartCompareTitle}</h3>
-                  <RecoveryChart r={results} currency={cur} t={t} />
-                </Card>
-                <Card className="lg:col-span-4">
-                  <h3 className="font-semibold mb-3">{t.assumptions}</h3>
-                  <ul className="space-y-2 text-sm">
-                    {LOSS_KEYS.filter((k) => k !== "other" || inputs.otherEnabled).map((k) => (
-                      <li key={k} className="flex justify-between gap-4">
-                        <span className="text-[#244629]/75">
-                          {k === "other" && inputs.otherLabel ? inputs.otherLabel : t.causes[k].title}
-                        </span>
-                        <span className="font-semibold tabular-nums">
-                          {pct(RECOVERY_RATES[k][0])} – {pct(RECOVERY_RATES[k][1])}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                </Card>
-              </div>
+              <Card>
+                <h3 className="font-semibold mb-4">{t.chartCompareTitle}</h3>
+                <RecoveryChart r={results} currency={cur} t={t} />
+              </Card>
             </div>
           )}
         </Section>

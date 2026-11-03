@@ -99,7 +99,29 @@ const es = {
   shareLabel: "De lo que hoy pierdes, recuperas",
   lossBarCaption: "Ingreso que hoy pierdes por temporada",
   cta: "Quiero una propuesta para mi operación",
-  assumptions: "Supuestos de recuperación por causa",
+  whyLink: "¿De dónde sale este valor?",
+  whyTitle: "¿De dónde sale este valor?",
+  whyIntro:
+    "Nuestra formulación se aplica en el agua de lavado de la planta de proceso y deja una capa protectora con péptidos que frenan el etileno (la hormona que acelera la maduración), el desarrollo de hongos y la deshidratación. El resultado es más vida útil: la fruta llega a destino en mejor condición y tú ganas tiempo para decidir cuándo y dónde vender.",
+  whyDays: (a: number, b: number) =>
+    `Supuesto base: la fruta tratada conserva su calidad comercial entre ${a} y ${b} días más que la fruta sin tratar.`,
+  whyFormula:
+    "Esos días adicionales evitan una parte de cada pérdida que ingresaste. Para cada causa calculamos: ingreso que hoy pierdes × porcentaje de esa pérdida que se evita. Usamos un rango entre un escenario conservador y uno optimista.",
+  whyRate: "de esta pérdida se evita",
+  whyYouLose: "Hoy pierdes",
+  whyYouRecover: "recuperas",
+  whyNoLoss: "No ingresaste pérdida por esta causa.",
+  causeWhy: {
+    spoiled:
+      "Menos pudrición y deshidratación. La acción antimicrobiana y anti-etileno retrasa la descomposición, así parte de la fruta que hoy se descarta llega en condición de venta.",
+    discounted:
+      "Llega más firme, con mejor color y pedúnculo más verde. Con más días de calidad, menos cajas reciben descuentos o rechazos en destino.",
+    diverted:
+      "Más fruta cumple el estándar de exportación. Parte de lo que hoy se va a industria o mercado interno porque no aguantaría el viaje puede exportarse.",
+    oversupply:
+      "Más tiempo para elegir cuándo y dónde vender. Con días extra puedes esperar a que pase la semana saturada o enviar a mercados más lejanos y mejor pagados.",
+    other: "Efecto indirecto de la mayor vida útil; por eso usamos el supuesto más conservador.",
+  } as Record<LossCauseKey, string>,
   chartCompareTitle: "Ingreso que pierdes en la temporada: hoy vs. con nuestra tecnología",
   lossToday: "Pérdida hoy",
   lossWithTech: "Con nuestra tecnología",
@@ -221,7 +243,29 @@ const en: typeof es = {
   shareLabel: "Of what you lose today, you recover",
   lossBarCaption: "Revenue you lose today per season",
   cta: "I want a proposal for my operation",
-  assumptions: "Recovery assumptions by cause",
+  whyLink: "Where does this value come from?",
+  whyTitle: "Where does this value come from?",
+  whyIntro:
+    "Our formulation is applied in the wash water at the packing plant and leaves a protective layer with peptides that slow down ethylene (the hormone that speeds up ripening), fungal growth and dehydration. The result is longer shelf life: fruit arrives in better condition and you gain time to decide when and where to sell.",
+  whyDays: (a: number, b: number) =>
+    `Base assumption: treated fruit keeps its commercial quality ${a} to ${b} days longer than untreated fruit.`,
+  whyFormula:
+    "Those extra days prevent part of each loss you entered. For each cause we calculate: revenue you lose today × share of that loss that is avoided. We use a range between a conservative and an optimistic scenario.",
+  whyRate: "of this loss is avoided",
+  whyYouLose: "You lose",
+  whyYouRecover: "you recover",
+  whyNoLoss: "You didn't enter a loss for this cause.",
+  causeWhy: {
+    spoiled:
+      "Less decay and dehydration. The antimicrobial and anti-ethylene action delays spoilage, so part of the fruit you discard today arrives in sellable condition.",
+    discounted:
+      "Arrives firmer, with better colour and greener stems. With more days of quality, fewer boxes get discounts or rejections at destination.",
+    diverted:
+      "More fruit meets export standards. Part of what goes to processing or the domestic market today because it wouldn't survive the trip can be exported.",
+    oversupply:
+      "More time to choose when and where to sell. With extra days you can wait out a saturated week or ship to farther, better-paying markets.",
+    other: "An indirect effect of longer shelf life, so we use the most conservative assumption.",
+  },
   chartCompareTitle: "Revenue lost in the season: today vs. with our technology",
   lossToday: "Loss today",
   lossWithTech: "With our technology",
