@@ -2,7 +2,6 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
-  Cell,
   LabelList,
   Legend,
   Line,
@@ -13,8 +12,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import type { LossCauseKey } from "./config";
-import { Currency, formatMoney, formatNumber, SimulatorResults } from "./calc";
+import { Currency, formatMoney, SimulatorResults } from "./calc";
 import type { SimulatorText } from "./i18n";
 import { COLORS } from "./theme";
 
@@ -54,14 +52,20 @@ export function PriceChart({
   currency,
   t,
   crossesYear,
+  factor,
+  unitLabel,
 }: {
   r: SimulatorResults;
   currency: Currency;
   t: SimulatorText;
   crossesYear: boolean;
+  /** kg → unidad mostrada (1 para kg, kg por caja, 1000 para tonelada). */
+  factor: number;
+  unitLabel: string;
 }) {
   if (r.pricePoints.length < 2) return <EmptyChart text={t.chartPriceEmpty} height={300} />;
-  const data = seasonOrder(r.pricePoints, crossesYear);
+  const data = seasonOrder(r.pricePoints, crossesYear).map((d) => ({ ...d, price: d.price * factor }));
+  const ref = r.refPrice != null ? r.refPrice * factor : null;
   const ticks = [...new Set(data.map((d) => d.x))];
   const weekLabel = (x: number) => `${t.weekShort} ${((x - 1) % 52) + 1}`;
   const dotColor = (kind: string) =>
@@ -94,16 +98,16 @@ export function PriceChart({
           <Tooltip
             contentStyle={tooltipStyle}
             labelFormatter={(x: number) => weekLabel(x)}
-            formatter={(v: number) => [`${formatMoney(v, currency, true)}${t.perKg}`, ""]}
+            formatter={(v: number) => [`${formatMoney(v, currency, true)}${unitLabel}`, ""]}
             separator=""
           />
-          {r.refPrice != null && (
+          {ref != null && (
             <ReferenceLine
-              y={r.refPrice}
+              y={ref}
               stroke={COLORS.inkSoft}
               strokeDasharray="5 5"
               label={{
-                value: `${t.avgLine} ${formatMoney(r.refPrice, currency, true)}`,
+                value: `${t.avgLine} ${formatMoney(ref, currency, true)}`,
                 position: "insideTopRight",
                 fill: COLORS.inkSoft,
                 fontSize: 12,
@@ -129,147 +133,6 @@ export function PriceChart({
             )}
           />
         </LineChart>
-      </ResponsiveContainer>
-    </div>
-  );
-}
-
-const causeColor: Record<LossCauseKey, string> = {
-  spoiled: COLORS.spoiled,
-  discounted: COLORS.discounted,
-  diverted: COLORS.diverted,
-  oversupply: COLORS.oversupply,
-  other: COLORS.other,
-};
-
-/** Barra horizontal 100% con la distribución del volumen (sin librería). */
-export function VolumeBar({
-  r,
-  t,
-  otherLabel,
-  lang,
-}: {
-  r: SimulatorResults;
-  t: SimulatorText;
-  otherLabel: string;
-  lang: "es" | "en";
-}) {
-  const parts = [
-    { key: "normal", label: t.normalSale, pct: r.normalPct, color: COLORS.normal },
-    ...r.causes
-      .filter((c) => c.pct > 0)
-      .map((c) => ({
-        key: c.key,
-        label: c.key === "other" && otherLabel ? otherLabel : t.causes[c.key].title,
-        pct: c.pct,
-        color: causeColor[c.key],
-      })),
-  ];
-  const total = parts.reduce((s, p) => s + p.pct, 0) || 1;
-  return (
-    <div>
-      <div className="flex h-8 w-full overflow-hidden rounded-full bg-[#244629]/10">
-        {parts.map((p) =>
-          p.pct > 0 ? (
-            <div
-              key={p.key}
-              title={`${p.label}: ${formatNumber(p.pct, 1, lang)}%`}
-              style={{ width: `${(p.pct / total) * 100}%`, backgroundColor: p.color }}
-              className="h-full transition-all duration-300"
-            />
-          ) : null
-        )}
-      </div>
-      <ul className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm">
-        {parts.map((p) => (
-          <li key={p.key} className="flex items-center gap-2">
-            <span className="h-3 w-3 shrink-0 rounded-sm" style={{ backgroundColor: p.color }} />
-            <span className="text-[#244629]/80 truncate">{p.label}</span>
-            <span className="ml-auto font-semibold tabular-nums">{formatNumber(p.pct, 1, lang)}%</span>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
-export function LossChart({
-  r,
-  currency,
-  t,
-  otherLabel,
-}: {
-  r: SimulatorResults;
-  currency: Currency;
-  t: SimulatorText;
-  otherLabel: string;
-}) {
-  const data = r.causes
-    .filter((c) => c.loss > 0)
-    .map((c) => ({
-      name: c.key === "other" && otherLabel ? otherLabel : t.causes[c.key].title,
-      key: c.key,
-      loss: c.loss,
-      recLow: c.recoveredLow,
-      recRange: c.recoveredHigh - c.recoveredLow,
-      recHigh: c.recoveredHigh,
-    }));
-  if (!r.ready || data.length === 0) return <EmptyChart text={t.chartLossEmpty} height={300} />;
-
-  return (
-    <div style={{ height: 80 + data.length * 56 }}>
-      <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={data} layout="vertical" margin={{ top: 4, right: 16, bottom: 4, left: 0 }} barGap={4}>
-          <CartesianGrid stroke={COLORS.grid} horizontal={false} />
-          <XAxis
-            type="number"
-            tick={axisTick}
-            stroke={COLORS.grid}
-            tickFormatter={(v: number) => formatMoney(v, currency)}
-          />
-          <YAxis type="category" dataKey="name" tick={axisTick} stroke={COLORS.grid} width={120} />
-          <Tooltip
-            contentStyle={tooltipStyle}
-            cursor={{ fill: "#24462908" }}
-            content={({ active, payload, label }) => {
-              if (!active || !payload?.length) return null;
-              const d = payload[0].payload as (typeof data)[number];
-              return (
-                <div style={{ ...tooltipStyle, padding: "8px 12px" }}>
-                  <div className="font-semibold mb-1">{label}</div>
-                  <div>
-                    {t.lossLegend}: {formatMoney(d.loss, currency)}
-                  </div>
-                  <div style={{ color: COLORS.green }}>
-                    {t.recoverLegend}: {formatMoney(d.recLow, currency)} – {formatMoney(d.recHigh, currency)}
-                  </div>
-                </div>
-              );
-            }}
-          />
-          <Legend
-            wrapperStyle={{ fontSize: 12, color: COLORS.ink }}
-            formatter={(v: string) => <span style={{ color: COLORS.ink }}>{v}</span>}
-            payload={[
-              { value: t.lossLegend, type: "square", color: COLORS.spoiled },
-              { value: t.recoverLegend, type: "square", color: COLORS.green },
-            ]}
-          />
-          <Bar dataKey="loss" barSize={16} radius={[0, 4, 4, 0]} isAnimationActive={false}>
-            {data.map((d) => (
-              <Cell key={d.key} fill={causeColor[d.key]} />
-            ))}
-          </Bar>
-          <Bar dataKey="recLow" stackId="rec" barSize={16} fill={COLORS.green} isAnimationActive={false} />
-          <Bar
-            dataKey="recRange"
-            stackId="rec"
-            barSize={16}
-            fill={COLORS.greenLight}
-            radius={[0, 4, 4, 0]}
-            isAnimationActive={false}
-          />
-        </BarChart>
       </ResponsiveContainer>
     </div>
   );
