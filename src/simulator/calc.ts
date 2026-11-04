@@ -339,3 +339,103 @@ export function toInputString(n: number, currency: Currency): string {
   const digits = currency === "CLP" ? 0 : n < 10 ? 2 : n < 100 ? 1 : 0;
   return String(Number(n.toFixed(digits)));
 }
+
+// ---------------------------------------------------------------------------
+// Validaciones de coherencia: evitan datos ilógicos entre pasos
+// ---------------------------------------------------------------------------
+
+export type Issue =
+  | { code: "bestBelowWorst" }
+  | { code: "avgAboveBest"; avg: number; best: number }
+  | { code: "avgBelowWorst"; avg: number; worst: number }
+  | { code: "pointAboveBest"; week: number }
+  | { code: "pointBelowWorst"; week: number }
+  | { code: "weekConflict"; week: number }
+  | { code: "weekRange" }
+  | { code: "destDuplicate"; name: string }
+  | { code: "destAboveBest"; name: string }
+  | { code: "destBelowWorst"; name: string }
+  | { code: "amountOverVolume" }
+  | { code: "priceNotLower"; normal: number };
+
+/** Paso de precios: mejor ≥ promedio ≥ peor, semanas sin precios contradictorios. */
+export function priceIssues(inp: SimulatorInputs, r: SimulatorResults): Issue[] {
+  if (inp.pricesEnabled !== "yes") return [];
+  const issues: Issue[] = [];
+  const best = priceToKg(inp.bestPrice, inp);
+  const worst = priceToKg(inp.worstPrice, inp);
+  if (best != null && worst != null && best < worst) issues.push({ code: "bestBelowWorst" });
+  if (r.refPrice != null) {
+    if (best != null && r.refPrice > best * 1.0001) issues.push({ code: "avgAboveBest", avg: r.refPrice, best });
+    if (worst != null && r.refPrice < worst * 0.9999) issues.push({ code: "avgBelowWorst", avg: r.refPrice, worst });
+  }
+  // Destinos fuera del rango mejor–peor
+  for (const d of inp.destinations) {
+    const p = priceToKg(d.price, inp);
+    if (p == null || !d.name.trim()) continue;
+    if (best != null && p > best * 1.0001) issues.push({ code: "destAboveBest", name: d.name.trim() });
+    if (worst != null && p < worst * 0.9999) issues.push({ code: "destBelowWorst", name: d.name.trim() });
+  }
+  // Semanas: rango válido y un solo precio por semana
+  const points: { week: string; price: string; extra: boolean }[] = [
+    { week: inp.bestWeek, price: inp.bestPrice, extra: false },
+    { week: inp.worstWeek, price: inp.worstPrice, extra: false },
+    ...inp.extraPoints.map((p) => ({ week: p.week, price: p.price, extra: true })),
+  ];
+  const byWeek = new Map<number, Set<number>>();
+  let outOfRange = false;
+  for (const pt of points) {
+    const w = parseNum(pt.week);
+    if (w == null) continue;
+    if (w < 1 || w > 52) {
+      outOfRange = true;
+      continue;
+    }
+    const p = priceToKg(pt.price, inp);
+    if (p == null) continue;
+    const set = byWeek.get(w) ?? new Set<number>();
+    set.add(Math.round(p * 10000));
+    byWeek.set(w, set);
+    if (pt.extra && best != null && p > best * 1.0001) issues.push({ code: "pointAboveBest", week: w });
+    if (pt.extra && worst != null && p < worst * 0.9999) issues.push({ code: "pointBelowWorst", week: w });
+  }
+  if (outOfRange) issues.push({ code: "weekRange" });
+  byWeek.forEach((prices, w) => {
+    if (prices.size > 1) issues.push({ code: "weekConflict", week: w });
+  });
+  return issues;
+}
+
+/** Paso de destinos: nombres repetidos. */
+export function destinationIssues(inp: SimulatorInputs): Issue[] {
+  const seen = new Set<string>();
+  const issues: Issue[] = [];
+  for (const d of inp.destinations) {
+    const n = d.name.trim();
+    if (!n) continue;
+    const k = n.toLowerCase();
+    if (seen.has(k)) issues.push({ code: "destDuplicate", name: n });
+    seen.add(k);
+  }
+  return issues;
+}
+
+/** Paso de una pérdida: cantidad dentro del volumen y precio menor al normal. */
+export function lossIssues(inp: SimulatorInputs, r: SimulatorResults, key: LossCauseKey): Issue[] {
+  const l = inp.losses[key];
+  if (l.answer !== "yes") return [];
+  const issues: Issue[] = [];
+  const amount = parseNum(l.amount);
+  if (amount != null) {
+    const over =
+      l.amountUnit === "pct"
+        ? amount > 100
+        : r.volumeKg != null && amount * kgPerUnit(inp.volumeUnit, inp) > r.volumeKg * 1.0001;
+    if (over) issues.push({ code: "amountOverVolume" });
+  }
+  if (key !== "spoiled" && r.refPrice != null) {
+    const p = priceToKg(l.price, inp);
+    if (p != null && p >= r.refPrice) issues.push({ code: "priceNotLower", normal: r.refPrice });
+  }
+  return issues;
+}

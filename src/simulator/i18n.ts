@@ -138,6 +138,25 @@ const es = {
   overflow: "Entre todas las pérdidas superas el 100% del volumen. Revisa los valores.",
   lossThisCause: "de ingreso perdido por esta causa",
 
+  // --- Validaciones de coherencia
+  issueTitle: "Revisa estos datos antes de continuar:",
+  issues: {
+    bestBelowWorst: () => "Tu mejor precio no puede ser menor que tu peor precio.",
+    avgAboveBest: (avg: string, best: string) =>
+      `Tu precio de venta normal (${avg}) es mayor que tu mejor precio (${best}). Revisa ambos valores.`,
+    avgBelowWorst: (avg: string, worst: string) =>
+      `Tu precio de venta normal (${avg}) es menor que tu peor precio (${worst}). Revisa ambos valores.`,
+    pointAboveBest: (w: number) => `El precio de la semana ${w} es mayor que tu mejor precio.`,
+    pointBelowWorst: (w: number) => `El precio de la semana ${w} es menor que tu peor precio.`,
+    weekConflict: (w: number) => `Ingresaste dos precios distintos para la semana ${w}.`,
+    weekRange: () => "Las semanas deben estar entre 1 y 52.",
+    destDuplicate: (n: string) => `El destino "${n}" aparece dos veces.`,
+    destAboveBest: (n: string) => `El precio de ${n} es mayor que tu mejor precio de la temporada.`,
+    destBelowWorst: (n: string) => `El precio de ${n} es menor que tu peor precio de la temporada.`,
+    amountOverVolume: () => "La cantidad supera el volumen total de tu temporada.",
+    priceNotLower: (normal: string) =>
+      `Este precio debería ser menor que tu precio de venta normal (${normal}); si no, no hubo pérdida.`,
+  },
   // --- Panel "Tu cuenta"
   ledgerTitle: "Tu cuenta",
   ledgerEmpty: "Aquí se irá armando la cuenta de tu temporada a medida que respondas.",
@@ -344,6 +363,24 @@ const en: typeof es = {
   overflow: "Your losses add up to more than 100% of the volume. Please check the values.",
   lossThisCause: "of revenue lost to this cause",
 
+  issueTitle: "Please check these values before continuing:",
+  issues: {
+    bestBelowWorst: () => "Your best price can't be lower than your worst price.",
+    avgAboveBest: (avg: string, best: string) =>
+      `Your normal selling price (${avg}) is higher than your best price (${best}). Please check both values.`,
+    avgBelowWorst: (avg: string, worst: string) =>
+      `Your normal selling price (${avg}) is lower than your worst price (${worst}). Please check both values.`,
+    pointAboveBest: (w: number) => `The price for week ${w} is higher than your best price.`,
+    pointBelowWorst: (w: number) => `The price for week ${w} is lower than your worst price.`,
+    weekConflict: (w: number) => `You entered two different prices for week ${w}.`,
+    weekRange: () => "Weeks must be between 1 and 52.",
+    destDuplicate: (n: string) => `The destination "${n}" appears twice.`,
+    destAboveBest: (n: string) => `The price for ${n} is higher than your best price of the season.`,
+    destBelowWorst: (n: string) => `The price for ${n} is lower than your worst price of the season.`,
+    amountOverVolume: () => "The amount exceeds your total season volume.",
+    priceNotLower: (normal: string) =>
+      `This price should be lower than your normal selling price (${normal}); otherwise there was no loss.`,
+  },
   ledgerTitle: "Your numbers",
   ledgerEmpty: "Your season's numbers will build up here as you answer.",
   ledgerSeason: "Value of your season",

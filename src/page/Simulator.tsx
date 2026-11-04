@@ -3,17 +3,21 @@ import { ArrowLeft, ArrowRight, Check, ChevronUp, Download, Plus, Sparkles, X } 
 import { useLanguage } from "../context/LanguageContext";
 import {
   computeResults,
+  destinationIssues,
   emptyInputs,
   exampleInputs,
   formatMoney,
   formatNumber,
   kgPerUnit,
   LOSS_KEYS,
+  lossIssues,
   parseNum,
+  priceIssues,
   seasonCrossesYear,
   toInputString,
   type Currency,
   type Fruit,
+  type Issue,
   type LossInput,
   type SimulatorInputs,
   type Unit,
@@ -109,12 +113,6 @@ export default function Simulator() {
   const priceTxt = (perKg: number | null) =>
     perKg == null ? "—" : `${formatMoney(perKg * priceFactor, cur, true)}${perUnit}`;
   const fruitInfo = FRUIT_INFO[inputs.fruit ?? "other"];
-  const fruitName =
-    inputs.fruit === "other"
-      ? inputs.fruitOther || t.fruits.other
-      : inputs.fruit
-        ? t.fruits[inputs.fruit]
-        : "";
 
   // ---- Captura de datos -------------------------------------------------
   const sessionId = useRef(newSessionId());
@@ -161,7 +159,48 @@ export default function Simulator() {
     if (k === "other" && !inputs.otherLabel.trim()) return false;
     return !results.pctOverflow;
   };
-  const canContinue = (() => {
+  // Validaciones de coherencia del paso actual
+  const stepIssues: Issue[] =
+    step === "destinations"
+      ? destinationIssues(inputs)
+      : step === "prices"
+        ? priceIssues(inputs, results)
+        : step.startsWith("loss-")
+          ? lossIssues(inputs, results, step.slice(5) as LossCauseKey)
+          : [];
+  const issueText = (i: Issue): string => {
+    switch (i.code) {
+      case "avgAboveBest":
+        return t.issues.avgAboveBest(priceTxt(i.avg), priceTxt(i.best));
+      case "avgBelowWorst":
+        return t.issues.avgBelowWorst(priceTxt(i.avg), priceTxt(i.worst));
+      case "pointAboveBest":
+      case "pointBelowWorst":
+      case "weekConflict":
+        return t.issues[i.code](i.week);
+      case "destDuplicate":
+      case "destAboveBest":
+      case "destBelowWorst":
+        return t.issues[i.code](i.name);
+      case "priceNotLower":
+        return t.issues.priceNotLower(priceTxt(i.normal));
+      default:
+        return t.issues[i.code]();
+    }
+  };
+  const issuesBox =
+    stepIssues.length > 0 ? (
+      <div role="alert" className="mt-6 rounded-xl border border-[#B5563A]/30 bg-[#B5563A]/10 px-4 py-3 text-sm animate-fadeIn">
+        <p className="font-semibold text-[#B5563A]">{t.issueTitle}</p>
+        <ul className="mt-1 list-disc pl-5 space-y-0.5">
+          {stepIssues.map((i, n) => (
+            <li key={n}>{issueText(i)}</li>
+          ))}
+        </ul>
+      </div>
+    ) : null;
+
+  const canContinue = stepIssues.length === 0 && (() => {
     if (step === "fruit") return inputs.fruit !== null && (inputs.fruit !== "other" || !!inputs.fruitOther.trim());
     if (step === "season") return results.hasSeason;
     if (step === "destinations") return !results.destinationsOverflow;
@@ -210,7 +249,8 @@ export default function Simulator() {
 
   const downloadPdf = async () => {
     const { downloadReport } = await import("../simulator/pdf");
-    await downloadReport({ inputs, results, contact, t, lang: language, fruitName });
+    // El PDF siempre se genera en español
+    await downloadReport({ inputs, results, contact });
   };
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -942,7 +982,14 @@ export default function Simulator() {
         <div className={`mt-6 grid grid-cols-1 gap-6 ${wide ? "" : "lg:grid-cols-12"}`}>
           <div className={wide ? "" : "lg:col-span-8"}>
             <div key={step} className="animate-fadeIn">
-              {bare ? body : <Card className="md:!p-8">{body}</Card>}
+              {bare ? (
+                body
+              ) : (
+                <Card className="md:!p-8">
+                  {body}
+                  {issuesBox}
+                </Card>
+              )}
             </div>
 
             {/* Navegación */}
@@ -960,7 +1007,8 @@ export default function Simulator() {
                     <button
                       type="button"
                       onClick={() => {
-                        if (step === "prices" && inputs.pricesEnabled === null) update({ pricesEnabled: "no" });
+                        // Omitir precios descarta lo ingresado en ese paso
+                        if (step === "prices") update({ pricesEnabled: "no" });
                         next();
                       }}
                       className="rounded-full px-4 py-2.5 text-sm font-medium text-[#244629]/70 hover:bg-[#244629]/5 transition"

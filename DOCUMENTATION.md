@@ -271,6 +271,10 @@ Accesible en `/simulador` (enlace en la barra de navegación). Recorrido biling�
 6. Resultado — sobre la mesa, recuperable (banner principal), "¿De dónde sale este valor?" y gráfico.
 7. Reporte — correo, nombre, región, frutales, empresa y teléfono opcionales, consentimiento obligatorio → guarda el contacto y descarga el PDF (`src/simulator/pdf.ts`, jsPDF cargado bajo demanda).
 
+**Validaciones de coherencia** (`priceIssues`, `destinationIssues`, `lossIssues` en `calc.ts`): bloquean "Continuar" y explican qué revisar. Mejor precio ≥ precio normal ≥ peor precio; precios por destino y semanas extra dentro de ese rango; un solo precio por semana; semanas entre 1 y 52; destinos sin repetir; cantidad perdida ≤ volumen total; precio obtenido en una pérdida < precio normal.
+
+**Reporte PDF** (siempre en español, gráficos vectoriales): resumen (sobre la mesa, recuperable, barra y 3 indicadores), tu temporada, destinos, la cuenta de tu temporada (cascada), pérdidas por causa (tabla con total), pérdida hoy vs. con nuestra tecnología, evolución del precio (si se ingresó), ¿de dónde sale este valor?, próximos pasos y numeración de páginas.
+
 Panel **"Tu cuenta"** fijo al costado (escritorio) o barra inferior desplegable (celular). Los campos muestran **valores sugeridos** al hacer clic.
 
 **Cálculo (`src/simulator/calc.ts`):**
