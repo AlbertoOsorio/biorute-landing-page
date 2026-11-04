@@ -14,7 +14,7 @@ import {
   type SimulatorInputs,
   type SimulatorResults,
 } from "./calc";
-import { RECOVERY_RATES, SHELF_LIFE_EXTRA_DAYS } from "./config";
+import { GROWER_FRUITS, RECOVERY_RATES, SHELF_LIFE_EXTRA_DAYS } from "./config";
 import { simulatorText } from "./i18n";
 import type { SimulatorContact } from "./storage";
 
@@ -169,10 +169,32 @@ export async function downloadReport(opts: {
   font(9, false, SOFT);
   doc.text(`${t.pdfDate}: ${new Date().toLocaleDateString("es-CL")}`, W - M, y + 4, { align: "right" });
   y += 18;
-  text(t.pdfTitle, 20, { bold: true, gap: 2 });
-  const who = [contact.name, contact.company, contact.region].filter(Boolean).join(" · ");
-  text(`${t.pdfPreparedFor}: ${who}`, 10, { color: SOFT, gap: 2 });
-  text(`${fruitName} · ${num(parseNum(inputs.volume) ?? 0)} ${t.unitsShort[inputs.volumeUnit]}`, 10, { color: SOFT, gap: 4 });
+  // Personalizado con los datos de quien lo genera
+  const owner = contact.company.trim() || contact.name.trim();
+  const docTitle = owner ? `Diagnóstico BioRoute | ${owner}` : "Diagnóstico BioRoute";
+  text(docTitle, 20, { bold: true, gap: 1 });
+  text(t.pdfTitle, 11, { color: GREEN, bold: true, gap: 4 });
+  const meta: [string, string][] = [
+    ["Generado por", [contact.name.trim(), contact.email.trim()].filter(Boolean).join(" · ")],
+    ["Empresa / predio", contact.company.trim()],
+    // Región y frutales en español aunque se hayan elegido con el sitio en inglés
+    ["Región", contact.region === simulatorText.en.regionOther ? t.regionOther : contact.region],
+    [
+      "Frutales",
+      contact.fruits.map((f) => GROWER_FRUITS.find((g) => g.en === f || g.es === f)?.es ?? f).join(", "),
+    ],
+    ["Evaluación", `${fruitName} · ${num(parseNum(inputs.volume) ?? 0)} ${t.unitsShort[inputs.volumeUnit]}`],
+  ];
+  for (const [k, v] of meta) {
+    if (!v) continue;
+    font(9, false, SOFT);
+    doc.text(k, M, y + 3.5);
+    font(9, true, INK);
+    doc.text(doc.splitTextToSize(v, CW - 35) as string[], M + 35, y + 3.5);
+    y += 5;
+  }
+  y += 4;
+  doc.setProperties({ title: docTitle, subject: t.pdfTitle, author: "BioRoute", creator: "BioRoute" });
 
   // =====================================================================
   // Resumen destacado (como el banner de la web)
@@ -534,9 +556,17 @@ export async function downloadReport(opts: {
     doc.setDrawColor(...GRID);
     doc.line(M, 287, W - M, 287);
     font(7.5, false, SOFT);
-    doc.text(`BioRoute · ${t.pdfTitle}`, M, 291);
+    doc.text(`${docTitle} · ${contact.email.trim()}`, M, 291);
     doc.text(`Página ${i} de ${pages}`, W - M, 291, { align: "right" });
   }
 
-  doc.save(t.pdfFile);
+  // Nombre de archivo con la empresa (o el nombre): diagnostico-bioroute-agricola-x.pdf
+  const slug = owner
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 40);
+  doc.save(slug ? `diagnostico-bioroute-${slug}.pdf` : t.pdfFile);
 }
