@@ -260,25 +260,31 @@ Accessible at `/contacto`. Bilingual form with three fields: **Name**, **Email**
 
 ## Simulador (`src/page/Simulator.tsx`)
 
-Accesible en `/simulador` (enlace en la barra de navegación). Herramienta bilingüe donde el productor ingresa los datos de su temporada y ve al instante gráficos, pérdidas y el **precio implícito de Ethylock** (rango).
+Accesible en `/simulador` (enlace en la barra de navegación). Recorrido bilingüe **paso a paso** donde el productor responde sobre su temporada y va viendo cómo se arma su cuenta: valor de la temporada → pérdidas por causa → lo que deja "sobre la mesa" → lo que puede recuperar. Al final descarga un reporte PDF.
 
-**Secciones:**
-1. Operación — fruta, moneda (USD/CLP), volumen en toneladas.
-2. Precios — mejor, peor y promedio por kg con su semana; semanas adicionales opcionales → gráfico de evolución del precio (soporta temporadas que cruzan el año).
-3. Causas de pérdida — % del volumen y precio obtenido para: se echó a perder, vendida más barata, otra aplicación, sobreoferta, otra causa. El resto se considera vendido al precio promedio.
-4. Resultado — ingreso potencial vs. real, pérdida, valor recuperable con Ethylock y precio implícito por kg.
-5. Contacto — los datos de contacto se guardan junto con la simulación.
+**Pasos:**
+1. Fruta (palta / cereza / otra) — muestra la ventana típica de cosecha y destinos.
+2. Temporada — moneda, volumen y precio promedio de venta normal, en **kg, toneladas o cajas** (kg por caja editable) → banner "Tu temporada vale aprox."
+3. Destinos (opcional) — % del volumen y precio por destino; ajusta el precio de venta normal (promedio ponderado).
+4. Variación de precio (opcional) — mejor/peor semana y semanas extra → gráfico.
+5. Pérdidas, una pregunta a la vez (Sí/No): se echó a perder, vendida más barata, otra aplicación, sobreoferta, otra causa. Cantidad en % o en la unidad de volumen, y precio obtenido.
+6. Resultado — sobre la mesa, recuperable (banner principal), "¿De dónde sale este valor?" y gráfico.
+7. Reporte — correo, nombre, región, frutales, empresa y teléfono opcionales, consentimiento obligatorio → guarda el contacto y descarga el PDF (`src/simulator/pdf.ts`, jsPDF cargado bajo demanda).
+
+Panel **"Tu cuenta"** fijo al costado (escritorio) o barra inferior desplegable (celular). Los campos muestran **valores sugeridos** al hacer clic.
 
 **Cálculo (`src/simulator/calc.ts`):**
-- Pérdida por causa = volumen afectado × (precio promedio − precio obtenido).
-- Valor recuperable = pérdida × % de recuperación de Ethylock para esa causa (rango conservador–optimista).
-- Precio implícito Ethylock por kg = valor recuperable por kg × participación de valor.
+- Todo se convierte internamente a kg y precio por kg.
+- Valor de la temporada = volumen × precio de venta normal (ponderado por destinos si los hay).
+- Pérdida por causa = volumen afectado × (precio normal − precio obtenido).
+- Valor recuperable = pérdida × % que se evita para esa causa (rango conservador–optimista).
+- Precio implícito por kg = valor recuperable por kg × participación de valor (solo interno).
 
-**Supuestos editables (`src/simulator/config.ts`):** `SHELF_LIFE_EXTRA_DAYS` (días adicionales de vida útil, hoy 2–4, el supuesto base que se explica en "¿De dónde sale este valor?"; **valor provisorio y conservador, máximo 5 días hasta validar con ensayos**, `null` lo oculta), `RECOVERY_RATES` (recuperación por causa) y `PRICE_VALUE_SHARE` (parte del valor que se considera precio razonable; solo uso interno, no se muestra). Cambiarlos actualiza todo el simulador.
+**Configuración (`src/simulator/config.ts`):** supuestos (`SHELF_LIFE_EXTRA_DAYS`, hoy 2–4 días, **provisorio y conservador**; `RECOVERY_RATES`; `PRICE_VALUE_SHARE`, solo interno) y **datos de rubro** (`FRUIT_INFO`: ventanas de cosecha, kg por caja, destinos y precios sugeridos; sugerencias de volumen y pérdidas; regiones; frutales). Los valores marcados **PROVISORIO** deben validarse con alguien del equipo antes de publicar.
 
 **Marca:** los textos no nombran el producto ("nuestra tecnología" / "nuestra formulación"), para que un rebranding no requiera cambios. El valor recuperable se presenta como **ingreso bruto adicional**, sin descontar el costo del tratamiento.
 
-**Captura de datos:** cada visita tiene un id; 2,5 s después de cada cambio se guarda (o actualiza) la fila de esa visita, así quedan los datos aunque no se deje contacto. Al enviar el formulario se agrega el contacto a la misma fila **y** se crea una fila en `contact_submissions` (mensaje que empieza con `[Simulador]`, con resumen e id de la simulación), así todos los contactos quedan en una sola tabla. Sin Supabase configurado no se guarda nada (en desarrollo se muestra en la consola del navegador).
+**Captura de datos:** cada visita tiene un id; 2,5 s después de cada cambio se guarda (o actualiza) la fila de esa visita, así quedan los datos aunque no se deje contacto. Se guarda también el paso alcanzado (`inputs.reached_step`) para ver dónde abandonan. Al enviar el formulario se agrega el contacto a la misma fila **y** se crea una fila en `contact_submissions` (mensaje que empieza con `[Simulador]`, con resumen e id de la simulación), así todos los contactos quedan en una sola tabla. Sin Supabase configurado no se guarda nada (en desarrollo se muestra en la consola del navegador).
 
 **Supabase:** la tabla `simulator_submissions` y la función `save_simulation` se crean con `supabase/setup.sql`.
 
@@ -336,6 +342,7 @@ npm run typecheck  # TypeScript type check (no emit)
 | `react-dom` | ^18.3.1 | DOM renderer |
 | `react-router-dom` | ^7.12.0 | Client-side routing |
 | `recharts` | ^2.15.4 | Gráficos del simulador |
+| `jspdf` | ^4.2.1 | Reporte PDF del simulador |
 | `lucide-react` | ^0.344.0 | Icons (chevrons, phone icon) |
 | `@supabase/supabase-js` | ^2.57.4 | Backend client (installed, not yet used in UI) |
 | `tailwindcss` | ^3.4.1 | Utility CSS |

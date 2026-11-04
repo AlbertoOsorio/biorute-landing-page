@@ -10,10 +10,13 @@ import { formatMoney, formatNumber, type SimulatorInputs, type SimulatorResults 
 
 export type SimulatorContact = {
   name: string;
-  company: string;
   email: string;
+  company: string;
+  region: string;
+  fruits: string[];
   phone: string;
-  message: string;
+  /** Aceptó ser contactado (casilla obligatoria). */
+  consent: boolean;
 };
 
 export function newSessionId(): string {
@@ -48,7 +51,8 @@ export async function saveSimulation(
   inputs: SimulatorInputs,
   results: SimulatorResults,
   language: string,
-  contact: SimulatorContact | null = null
+  contact: SimulatorContact | null = null,
+  reachedStep?: string
 ): Promise<boolean> {
   if (!supabaseConfigured || !supabase) {
     // Visible también en producción (F12 → Console) para diagnosticar.
@@ -67,7 +71,8 @@ export async function saveSimulation(
   }
   const { error } = await supabase.rpc("save_simulation", {
     p_id: id,
-    p_inputs: inputs,
+    // reached_step: hasta qué paso llegó la persona (útil para ver abandonos)
+    p_inputs: { ...inputs, reached_step: reachedStep ?? null },
     p_results: summarize(results),
     p_contact: contact,
     p_language: language,
@@ -96,18 +101,22 @@ export async function saveSimulatorContact(
 ): Promise<boolean> {
   const cur = inputs.currency;
   const fruit =
-    inputs.fruit === "other" && inputs.fruitOther ? inputs.fruitOther : FRUIT_ES[inputs.fruit];
+    inputs.fruit === "other" && inputs.fruitOther
+      ? inputs.fruitOther
+      : FRUIT_ES[inputs.fruit ?? "other"];
   const lines = [
     "[Simulador]",
     contact.company && `Empresa: ${contact.company}`,
+    contact.region && `Región: ${contact.region}`,
+    contact.fruits.length > 0 && `Frutales: ${contact.fruits.join(", ")}`,
     contact.phone && `Teléfono: ${contact.phone}`,
-    contact.message && `Comentario: ${contact.message}`,
-    `Fruta: ${fruit} · Volumen: ${inputs.volumeTons || "—"} t · Moneda: ${cur}`,
+    `Consentimiento de contacto: ${contact.consent ? "sí" : "no"}`,
+    `Simulado: ${fruit} · Volumen: ${inputs.volume || "—"} ${inputs.volumeUnit} · Moneda: ${cur}`,
     results.ready &&
-      `Ingreso perdido: ${formatMoney(results.totalLoss, cur)} (${formatNumber(
+      `Sobre la mesa: ${formatMoney(results.totalLoss, cur)} (${formatNumber(
         (results.lossShare ?? 0) * 100,
         1
-      )}%)`,
+      )}% del valor de la temporada)`,
     results.ready &&
       `Recuperable: ${formatMoney(results.recoveredLow, cur)} – ${formatMoney(results.recoveredHigh, cur)}`,
     `Simulación: ${simulationId}`,
